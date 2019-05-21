@@ -43,18 +43,17 @@ class ESInit extends Command
             'json' => [
                 'template' => config('scout.elasticsearch.index'),
                 'mappings' => [
-                    '_default_' => [
-                        'dynamic_templates' => [
-                            [
-                                'strings' => [
-                                    'match_mapping_type' => 'string',
-                                    'mapping' => [
-                                        'type' => 'text',
-                                        'analyzer' => 'ik_max_word',
-                                        'fields' => [
-                                            'keyword' => [
-                                                'type' => 'keyword',
-                                            ],
+                    'dynamic_templates' => [
+                        [
+                            'strings' => [
+                                'match_mapping_type' => 'string',
+                                'mapping' => [
+                                    'type' => 'text',
+                                    'analyzer' => 'ik_max_word',
+                                    'fields' => [
+                                        'raw'=> [
+                                            'type' => 'keyword',
+                                            'ignore_above' => 256,
                                         ],
                                     ],
                                 ],
@@ -64,6 +63,7 @@ class ESInit extends Command
                 ],
             ],
         ];
+        $client->delete($url);
         $client->put($url, $param);
 
         $this->info('========= create template success ========');
@@ -73,19 +73,15 @@ class ESInit extends Command
         $param = [
             'json' => [
                 'settings' => [
-                    'refresh_interval' => '5s',
-                    'number_of_shards' => 1,
-                    'number_of_replicas' => 0,
-                ],
-                'mappings' => [
-                    '_default_' => [
-                        '_all' => [
-                            'enabled' => false,
-                        ],
+                    'index' =>[
+                        'refresh_interval' => '5s',
+                        'number_of_shards' => 1,
+                        'number_of_replicas' => 0,
                     ],
                 ],
             ],
         ];
+        // $client->delete($url);
         $client->put($url, $param);
 
         $this->info('=========== create index success ==========');
