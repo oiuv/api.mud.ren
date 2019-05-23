@@ -3,12 +3,12 @@
 use Illuminate\Support\Facades\Route;
 
 /**
- * IIS 服务器请在【HTTP响应标头】中设置一下值
- * 非 IIS 服务器请取消一下注释
+ * IIS 服务器请在【HTTP响应标头】中设置以下值
+ * 非 IIS 服务器请取消以下注释
  */
-// header('Access-Control-Allow-Origin: *');
-// header('Access-Control-Allow-Headers: Authorization, Content-Type, Access-Control-Allow-Headers, X-Requested-With');
-// header('Access-Control-Allow-Methods: *');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Headers: Authorization, Content-Type, Access-Control-Allow-Headers, X-Requested-With');
+header('Access-Control-Allow-Methods: *');
 
 // Auth
 Route::post('auth/register', 'AuthController@register');
