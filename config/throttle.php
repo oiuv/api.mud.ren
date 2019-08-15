@@ -2,6 +2,6 @@
 
 return [
     'thread' => [
-        'create' => 3, // Minute
+        'create' => 1, // Minute
     ],
 ];
