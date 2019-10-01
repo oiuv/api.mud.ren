@@ -36,7 +36,7 @@ class AuthController extends Controller
 
     public function reset(Request $request)
     {
-        return $request->get('email') ?
+        return $request->has('email') ?
             $this->resetPasswordByToken($request) :
             $this->resetPassword($request);
     }
