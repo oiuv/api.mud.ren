@@ -24,6 +24,21 @@ class UserFilter extends ModelFilter
         $this->where('username', 'like', \sprintf('%%%s%%', $query));
     }
 
+    public function order($type)
+    {
+        switch ($type) {
+            case 'ranking':
+                $this->orderByDesc("energy");
+
+                break;
+
+            case 'zeroComment':
+                $this->doesntHave('comments');
+
+                break;
+        }
+    }
+
     public function latest()
     {
         $this->orderByDesc('created_at');

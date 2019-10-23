@@ -132,15 +132,15 @@ class User extends Authenticatable
         'has_banned', 'has_activated', 'has_followed', 'created_at_timeago', 'updated_at_timeago',
     ];
 
-    const ENERGY_THREAD_CREATE = -20;
+    const ENERGY_THREAD_CREATE = 20;
 
-    const ENERGY_COMMENT_CREATE = -2;
+    const ENERGY_COMMENT_CREATE = 5;
 
-    const ENERGY_THREAD_LIKED = 2;
+    const ENERGY_THREAD_LIKED = 3;
 
-    const ENERGY_COMMENT_UP_VOTE = 2;
+    const ENERGY_COMMENT_UP_VOTE = 1;
 
-    const ENERGY_COMMENT_DOWN_VOTE = -5;
+    const ENERGY_COMMENT_DOWN_VOTE = 1;
 
     const ENERGY_COMMENT_DELETE = -10;
 

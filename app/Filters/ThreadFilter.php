@@ -20,7 +20,7 @@ class ThreadFilter extends ModelFilter
 
         switch ($tab) {
             case 'default':
-                $this->latest('pinned_at')->latest('excellent_at');
+                $this->latest('updated_at');
 
                 break;
             case 'featured':
@@ -28,7 +28,7 @@ class ThreadFilter extends ModelFilter
 
                 break;
             case 'recent':
-                $this->latest()->latest('updated_at');
+                $this->latest();
 
                 break;
             case 'zeroComment':
