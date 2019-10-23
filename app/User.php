@@ -132,7 +132,7 @@ class User extends Authenticatable
         'has_banned', 'has_activated', 'has_followed', 'created_at_timeago', 'updated_at_timeago',
     ];
 
-    const ENERGY_THREAD_CREATE = 20;
+    const ENERGY_THREAD_CREATE = 10;
 
     const ENERGY_COMMENT_CREATE = 5;
 

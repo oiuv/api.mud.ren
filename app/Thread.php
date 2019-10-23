@@ -137,9 +137,8 @@ class Thread extends Model implements Commentable
         });
 
         static::saved(function ($thread) {
-            $thread->user->increment('energy', User::ENERGY_THREAD_CREATE);
-
             if ($thread->wasRecentlyCreated) {
+                $thread->user->increment('energy', User::ENERGY_THREAD_CREATE);
                 \activity('published.thread')
                     ->performedOn($thread)
                     ->withProperty('content', \str_limit(\strip_tags($thread->content->body), 200))
