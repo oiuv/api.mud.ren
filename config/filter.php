@@ -13,6 +13,6 @@ return [
         'destroy', 'yike', 'yikeio', 'yikeadmin', 'api', 'user', 'panel',
         'dashboard', 'explore', 'market', 'marketplace',
         'logout', 'author', 'weibo', 'md5', 'place', 'store', 'documentation', 'docs',
-        'other', 'install',
+        'other', 'install', 'param', 'return',
     ],
 ];
