@@ -70,14 +70,18 @@ class AuthController extends Controller
 
         $email = $request->input('email');
         if (Hash::check($request->input('token'), PWRT::where('email', $email)->value('token'))) {
-            $user = User::where('email', $email)->update([
+            User::where('email', $email)->update([
                 'password' => bcrypt($request->input('password')),
             ]);
+            PWRT::where('email', $email)->delete();
+
             return response()->json([
+                'status' => 200,
                 'message' => '密码修改成功，请重新登录！'
             ]);
         } else {
             return response()->json([
+                'status' => 404,
                 'message' => '密码修改失败，请重新发送找回密码邮件！'
             ]);
         }
