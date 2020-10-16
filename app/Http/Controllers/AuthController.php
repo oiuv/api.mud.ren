@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\RegisterRequest;
 use App\User;
+use App\PasswordReset as PWRT;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -14,7 +15,7 @@ class AuthController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api')->except(['register', 'forgetPassword', 'resetPassword', 'resetPasswordByToken']);
+        $this->middleware('auth:api')->except(['register', 'forgetPassword','reset', 'resetPassword', 'resetPasswordByToken']);
     }
 
     public function register(RegisterRequest $request)
@@ -67,19 +68,19 @@ class AuthController extends Controller
             'password' => 'required|confirmed|min:6',
         ]);
 
-        $this->broker()->reset(
-            $this->credentials($request), function ($user, $password) {
-                $user->password = Hash::make($password);
-
-                $user->setRememberToken(Str::random(60));
-
-                $user->save();
-
-                event(new PasswordReset($user));
-            }
-        );
-
-        return response()->json();
+        $email = $request->input('email');
+        if (Hash::check($request->input('token'), PWRT::where('email', $email)->value('token'))) {
+            $user = User::where('email', $email)->update([
+                'password' => bcrypt($request->input('password')),
+            ]);
+            return response()->json([
+                'message' => '密码修改成功，请重新登录！'
+            ]);
+        } else {
+            return response()->json([
+                'message' => '密码修改失败，请重新发送找回密码邮件！'
+            ]);
+        }
     }
 
     /**
