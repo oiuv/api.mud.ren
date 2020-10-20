@@ -46,7 +46,7 @@ class AuthController extends Controller
     {
         $request->validate([
             'old_password' => 'required|hash:'.auth()->user()->password,
-            'password' => 'required|different:old_password|confirmed',
+            'password' => 'required|different:old_password|confirmed|min:6',
         ], [
             'old_password.hash' => '旧密码输入错误！',
         ], [
@@ -57,7 +57,10 @@ class AuthController extends Controller
             'password' => bcrypt($request->get('password')),
         ]);
 
-        return response()->json();
+        return response()->json([
+            'status' => 200,
+            'message' => '密码修改成功 ^_^'
+        ]);
     }
 
     public function resetPasswordByToken(Request $request)
