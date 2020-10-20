@@ -157,9 +157,10 @@ class User extends Authenticatable
         });
 
         static::saving(function ($user) {
-            if (Hash::needsRehash($user->password)) {
-                $user->password = \bcrypt($user->password);
-            }
+            // 为兼容MUD注册账号，不重新加密
+            // if (Hash::needsRehash($user->password)) {
+            //     $user->password = \bcrypt($user->password);
+            // }
 
             if (\array_has($user->getDirty(), self::UPDATE_SENSITIVE_FIELDS) && !\request()->user()->is_admin) {
                 abort('非法请求！');
@@ -243,7 +244,7 @@ class User extends Authenticatable
                 \mkdir(\dirname($filepath), 0755, true);
             }
 
-            \Avatar::create($this->name)->save(Storage::disk('public')->path($filename));
+            \Avatar::create($this->username)->save(Storage::disk('public')->path($filename));
 
             $this->update(['avatar' => \asset(\sprintf('storage/%s', $filename))]);
         }
