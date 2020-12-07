@@ -33,13 +33,15 @@ class EventServiceProvider extends ServiceProvider
         Event::listen(RelationToggled::class, function ($event) {
             if (!empty($event->attached)) {
                 foreach ($event->attached as $threadId) {
-                    Thread::find($threadId)->user->userEnergyUpdate($event->getRelationType());
+                    if ($thread = Thread::find($threadId))
+                        $thread->user->userEnergyUpdate($event->getRelationType());
                 }
             }
 
             if (!empty($event->detached)) {
                 foreach ($event->detached as $threadId) {
-                    Thread::find($threadId)->user->userEnergyUpdate($event->getRelationType().'-cancel');
+                    if ($thread = Thread::find($threadId))
+                        $thread->user->userEnergyUpdate($event->getRelationType().'-cancel');
                 }
             }
         });
