@@ -28,7 +28,7 @@ class ThreadFilter extends ModelFilter
 
                 break;
             case 'recent':
-                $this->latest();
+                $this->whereNull('pinned_at')->latest();
 
                 break;
             case 'zeroComment':

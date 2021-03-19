@@ -38,7 +38,7 @@ class NodeController extends Controller
     {
         $threads = $node->threads()
                         ->published()
-                        ->latest()
+                        ->orderByDesc('pinned_at')
                         ->filter($request->all())
                         ->paginate($request->get('per_page', 20));
 
