@@ -18,8 +18,9 @@ class NodeFilter extends ModelFilter
     {
         \request()->merge(['per_page' => $count]);
 
-        $this->orderBy('cache->threads_count', 'desc')
-            ->orderBy('cache->subscribers_count', 'desc')
+        $this->whereNotNull('cache')
+            // ->orderBy('cache->threads_count', 'desc')
+            // ->orderBy('cache->subscribers_count', 'desc')
             ->take($count);
     }
 }
