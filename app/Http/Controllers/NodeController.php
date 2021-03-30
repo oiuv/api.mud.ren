@@ -22,12 +22,14 @@ class NodeController extends Controller
     public function index(Request $request)
     {
         if ($request->has('all')) {
-            $builder = Node::with('children')->root();
+            $builder = Node::with(['children' => function ($query) {
+                $query->orderBy('order');
+            }])->root();
         } else {
             $builder = Node::leaf();
         }
 
-        $nodes = $builder->latest()
+        $nodes = $builder->orderBy('order')
                     ->filter($request->all())
                     ->paginate($request->get('per_page', 20));
 

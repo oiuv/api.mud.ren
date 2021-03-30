@@ -24,7 +24,9 @@ use Overtrue\LaravelFollow\Traits\CanBeSubscribed;
  */
 class Node extends Model
 {
-    use SoftDeletes, Filterable, CanBeSubscribed;
+    use SoftDeletes;
+    use Filterable;
+    use CanBeSubscribed;
 
     protected $fillable = [
         'node_id', 'title', 'icon', 'banner', 'description', 'settings', 'cache',
@@ -54,12 +56,12 @@ class Node extends Model
 
     public function scopeRoot($query)
     {
-        return $query->whereNull('node_id');
+        return $query->where('node_id', 0);
     }
 
     public function scopeLeaf($query)
     {
-        return $query->whereNotNull('node_id');
+        return $query->where('node_id', '>', 0);
     }
 
     public function threads()
