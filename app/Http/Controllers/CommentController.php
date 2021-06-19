@@ -121,7 +121,7 @@ class CommentController extends Controller
      */
     public function update(Request $request, Comment $comment)
     {
-        $this->authorize('update', Comment::class);
+        $this->authorize('update', $comment);
 
         $this->validate($request, [
             'type' => 'in:markdown,html',
