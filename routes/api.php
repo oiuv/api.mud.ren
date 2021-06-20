@@ -60,3 +60,5 @@ Route::resources([
     'users' => 'UserController',
     'notifications' => 'NotificationController',
 ]);
+
+Route::patch('contents/{content}', 'ContentController@update');
