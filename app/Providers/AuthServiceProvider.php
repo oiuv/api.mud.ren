@@ -4,9 +4,11 @@ namespace App\Providers;
 
 use App\Banner;
 use App\Comment;
+use App\Content;
 use App\Node;
 use App\Policies\BannerPolicy;
 use App\Policies\CommentPolicy;
+use App\Policies\ContentPolicy;
 use App\Policies\NodePolicy;
 use App\Policies\ProfilePolicy;
 use App\Policies\TagPolicy;
@@ -29,6 +31,7 @@ class AuthServiceProvider extends ServiceProvider
     protected $policies = [
         Banner::class => BannerPolicy::class,
         Comment::class => CommentPolicy::class,
+        Content::class => ContentPolicy::class,
         Node::class => NodePolicy::class,
         Profile::class => ProfilePolicy::class,
         Tag::class => TagPolicy::class,

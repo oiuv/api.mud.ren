@@ -53,7 +53,7 @@ class ContentPolicy
      */
     public function update(User $user, Content $content)
     {
-        //
+        return $content->contentable->user_id == $user->id || $user->is_admin;
     }
 
     /**

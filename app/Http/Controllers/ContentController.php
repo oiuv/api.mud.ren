@@ -26,7 +26,7 @@ class ContentController extends Controller
      */
     public function update(Request $request, Content $content)
     {
-        // $this->authorize('update', $content);
+        $this->authorize('update', $content);
 
         $this->validate($request, [
             'markdown' => 'required',
