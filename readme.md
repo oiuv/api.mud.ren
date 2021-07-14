@@ -1,18 +1,11 @@
 
-<img align="right" width="80" src="https://user-images.githubusercontent.com/1472352/48118952-d4f4db80-e2a8-11e8-8d0a-37b24c071b12.png"/>
+<img align="right" width="80" src="https://www.mud.ren/logo.png"/>
 
-<h1 align="left"><a href="https://yike.io">Yike.io</a></h1>
+<h1 align="left"><a href="https://bbs.mud.ren">bbs.mud.ren</a></h1>
 
-[![Build Status](https://travis-ci.org/overtrue/api.yike.io.svg?branch=master)](https://travis-ci.org/overtrue/api.yike.io)
+此项目为 https://bbs.mud.ren 的后端 API，基于 Laravel 5.8 开发。
 
-此项目为 https://yike.io 的后端 API，基于 Laravel 5 开发。
-
-> 🏵前端源码：https://github.com/overtrue/yike.io
-
-开源中国 Gitee 仓库：[![Fork me on Gitee](https://gitee.com/overtrue/api.yike.io/widgets/widget_3.svg)](https://gitee.com/overtrue/api.yike.io)
-
-> 🚨此次开源只是应大家的要求，所以请不要联系我咨询任何使用问题，遇到问题请自行解决，熟读 Laravel 文档。
-> 如果你有兴趣参与改进，请直接 PR 即可。
+> 🏵前端源码：https://github.com/oiuv/bbs.mud.ren
 
 > 🎬快速上手视频：[053. 优秀的开源社区——yike.io](https://learnku.com/courses/laravel-package/yikeio/2505)
 
@@ -27,9 +20,9 @@
 
 ## 开发环境部署/安装
 
-本项目代码使用 PHP 框架 [Laravel 5](https://learnku.com/docs/laravel/5.5) 开发，本地开发环境使用 [Laravel Homestead](https://learnku.com/docs/laravel/5.5/homestead/1285)。
+本项目代码使用 PHP 框架 [Laravel 5.8](https://learnku.com/docs/laravel/5.8) 开发。
 
-下文将在假定读者已经安装好了 Homestead 的情况下进行说明。如果您还未安装 Homestead，可以参照 [Homestead 安装与设置](https://learnku.com/docs/laravel/5.5/homestead/1285#installation-and-setup) 进行安装配置。
+下文将在假定读者已经安装好了 Homestead 的情况下进行说明。如果您还未安装 Homestead，可以参照 [Homestead 安装与设置](https://learnku.com/docs/laravel/5.8/homestead/3882) 进行安装配置。
 
 ### 基础安装
 
@@ -37,7 +30,7 @@
 
 克隆源代码到本地：
 
-    > git clone git@github.com:overtrue/api.yike.io.git
+    > git clone https://github.com/oiuv/api.mud.ren.git
 
 #### 配置本地的 Homestead 环境
 
@@ -51,15 +44,15 @@ homestead edit
 
 ```
 folders:
-    - map: ~/my-path/api.yike.io/ # 你本地的项目目录地址
-      to: /home/vagrant/api.yike.io
+    - map: ~/WWWROOT/api.mud.ren/ # 你本地的项目目录地址
+      to: /home/vagrant/api.mud.ren
 
 sites:
-    - map: api.yike.io.test
-      to: /home/vagrant/api.yike.io/public
+    - map: api.mud.ren.test
+      to: /home/vagrant/api.mud.ren/public
 
 databases:
-    - api_yike_io
+    - mud_ren
 ```
 
 3). 应用修改
@@ -85,10 +78,10 @@ cp .env.example .env
 你可以根据情况修改 `.env` 文件里的内容，如数据库连接、缓存、邮件设置等：
 
 ```
-APP_URL=http://api.yike.io.test
+APP_URL=http://api.mud.ren.test
 ...
 DB_HOST=localhost
-DB_DATABASE=api_yike_io
+DB_DATABASE=mud_ren
 DB_USERNAME=homestead
 DB_PASSWORD=secret
 ```
@@ -119,7 +112,7 @@ $ php artisan passport:install
 
 #### 配置 hosts 文件
 
-    echo "192.168.10.10   api.yike.io.test" | sudo tee -a /etc/hosts
+    echo "192.168.10.10   api.mud.ren.test" | sudo tee -a /etc/hosts
 
 #### 其它服务配置
 ##### 腾讯 007 防水墙
@@ -157,8 +150,8 @@ ELASTICSEARCH_HOST=http://127.0.0.1:9200
 
 ### 链接入口
 
-* 首页地址：http://api.yike.io.test
-* 管理后台：没做
+* 首页地址：http://api.mud.ren.test
+* 管理后台：https://github.com/mudren/mud.ren
 
 管理员账号请自己添加 UserSeeder 创建。
 
@@ -168,7 +161,7 @@ ELASTICSEARCH_HOST=http://127.0.0.1:9200
 
 
 | **扩展包** | **一句话描述** | **本项目应用场景** |
-| ---- | ---- | ---- | 
+| ---- | ---- | ---- |
 | [overtrue/easy-sms](https://github.com/overtrue/easy-sms) | 多网关短信发送组件 | 发送验证码 |
 | [overtrue/laravel-emoji](https://github.com/overtrue/laravel-emoji) | emoji 转换组件 | 帖子与评论 emoji 解析 |
 | [overtrue/laravel-filesystem-qiniu](https://github.com/overtrue/laravel-filesystem-qiniu) | 七牛 CDN SDK | 帖子内容图片存储 |
@@ -204,11 +197,9 @@ ELASTICSEARCH_HOST=http://127.0.0.1:9200
 
 ## PHP 扩展包开发
 
-> 想知道如何从零开始构建 PHP 扩展包？
->
-> 请关注我的实战课程，我会在此课程中分享一些扩展开发经验 —— [《PHP 扩展包实战教程 - 从入门到发布》](https://learnku.com/courses/creating-package)
+想知道如何从零开始构建 PHP 扩展包？请关注[《PHP 扩展包实战教程 - 从入门到发布》](https://learnku.com/courses/creating-package)
 
 
-## License 
+## License
 
 MIT
