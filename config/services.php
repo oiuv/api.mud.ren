@@ -37,19 +37,19 @@ return [
     'github' => [
         'client_id' => env('GITHUB_CLIENT_ID'),
         'client_secret' => env('GITHUB_CLIENT_SECRET'),
-        'redirect' => 'https://yike.io/auth/oauth-callback/github',
+        'redirect' => 'https://bbs.mud.ren/auth/oauth-callback/github',
     ],
 
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-        'redirect' => 'https://yike.io/auth/oauth-callback/google',
+        'redirect' => 'https://bbs.mud.ren/auth/oauth-callback/google',
     ],
 
     'facebook' => [
         'client_id' => env('FACEBOOK_CLIENT_ID'),
         'client_secret' => env('FACEBOOK_CLIENT_SECRET'),
-        'redirect' => 'https://yike.io/auth/oauth-callback/facebook',
+        'redirect' => 'https://bbs.mud.ren/auth/oauth-callback/facebook',
     ],
 
     'captcha' => [

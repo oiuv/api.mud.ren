@@ -1,7 +1,7 @@
 <?php
 
 $header = <<<EOF
-This file is part of the yikeio/yike.
+This file is part of the mudren/mud.ren.
 
 (c) overtrue <i@overtrue.me>
 

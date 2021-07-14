@@ -134,7 +134,7 @@ CAPTCHA_SECRET_REGISTER=
 帖子搜索基于 [ElasticSearch](https://www.elastic.co/) 实现，所以你需要在任何机器上部署一个 ES 服务，然后将地址与索引名称配置到：
 
 ```env
-ELASTICSEARCH_INDEX=yike
+ELASTICSEARCH_INDEX=mudren
 ELASTICSEARCH_HOST=http://127.0.0.1:9200
 ```
 
