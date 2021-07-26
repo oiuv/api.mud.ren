@@ -9,7 +9,6 @@ use App\Notification;
 use App\Notifications\Welcome;
 use App\User;
 use Illuminate\Http\Request;
-use UrlSigner;
 
 class UserController extends Controller
 {
@@ -91,7 +90,7 @@ class UserController extends Controller
 
     public function activate(Request $request)
     {
-        if (UrlSigner::validate($request->fullUrl())) {
+        if ($request->hasValidSignature()) {
             $user = User::whereEmail($request->email)->first();
             $user->activate();
             $user->notify(new Welcome());
@@ -117,7 +116,7 @@ class UserController extends Controller
 
     public function updateEmail(Request $request)
     {
-        if (UrlSigner::validate($request->fullUrl())) {
+        if ($request->hasValidSignature()) {
             $user = User::findOrFail($request->get('user_id'));
 
             $user->update(['email' => $request->get('email')]);

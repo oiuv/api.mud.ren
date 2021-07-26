@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Laravel\Passport\HasApiTokens;
 use Overtrue\LaravelFollow\Traits\CanBeFollowed;
 use Overtrue\LaravelFollow\Traits\CanFavorite;
@@ -20,7 +21,6 @@ use Overtrue\LaravelFollow\Traits\CanFollow;
 use Overtrue\LaravelFollow\Traits\CanLike;
 use Overtrue\LaravelFollow\Traits\CanSubscribe;
 use Overtrue\LaravelFollow\Traits\CanVote;
-use UrlSigner;
 
 /**
  * Class User.
@@ -308,17 +308,15 @@ class User extends Authenticatable
 
     public function getActivationLink()
     {
-        return UrlSigner::sign(route('user.activate').'?'.http_build_query(['email' => $this->email]), 60);
+        return URL::temporarySignedRoute('user.activate', now()->addHour(), ['email' => $this->email]);
     }
 
     public function getUpdateMailLink(string $email)
     {
-        $params = http_build_query([
+        return URL::temporarySignedRoute('user.update-email', now()->addHour(), [
             'email' => $email,
             'user_id' => $this->id,
         ]);
-
-        return UrlSigner::sign(route('user.update-email').'?'.$params, 60);
     }
 
     public function activate()
