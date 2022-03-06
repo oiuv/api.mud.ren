@@ -3,7 +3,7 @@
 
 <h1 align="left"><a href="https://bbs.mud.ren">bbs.mud.ren</a></h1>
 
-此项目为 https://bbs.mud.ren 的后端 API，基于 Laravel 5.8 开发。
+此项目为 https://bbs.mud.ren 的后端 API，基于 Laravel 开发。
 
 > 🏵前端源码：https://github.com/oiuv/bbs.mud.ren
 
@@ -11,18 +11,14 @@
 
 ## 运行环境要求
 
-- Nginx 1.8+
-- PHP 7.1+
-- MySQL 5.7.7+
-- Redis 3.0+
-- ElasticSearch 5.*
+- ElasticSearch 6.*
 - [ElasticSearch ik 插件](https://github.com/medcl/elasticsearch-analysis-ik)
 
 ## 开发环境部署/安装
 
-本项目代码使用 PHP 框架 [Laravel 5.8](https://learnku.com/docs/laravel/5.8) 开发。
+本项目代码使用 PHP 框架 [Laravel 6.x](https://learnku.com/docs/laravel/) 开发。
 
-下文将在假定读者已经安装好了 Homestead 的情况下进行说明。如果您还未安装 Homestead，可以参照 [Homestead 安装与设置](https://learnku.com/docs/laravel/5.8/homestead/3882) 进行安装配置。
+下文将在假定读者已经安装好了 Homestead 的情况下进行说明。
 
 ### 基础安装
 

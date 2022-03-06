@@ -4,7 +4,7 @@ namespace App\Services;
 
 use Illuminate\Database\Eloquent\Collection;
 use Laravel\Scout\Builder;
-use ScoutEngines\Elasticsearch\ElasticsearchEngine;
+use Tamayo\LaravelScoutElastic\Engines\ElasticsearchEngine;
 
 /**
  * Class EsEngine.
@@ -34,7 +34,7 @@ class EsEngine extends ElasticsearchEngine
     protected function performSearch(Builder $builder, array $options = [])
     {
         $params = [
-            'index' => $this->index,
+            'index' => config('scout.elasticsearch.index'),
             'type' => $builder->model->searchableAs(),
             'body' => [
                 'query' => [
