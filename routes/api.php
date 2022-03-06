@@ -4,10 +4,11 @@ use Illuminate\Support\Facades\Route;
 use Overtrue\LaravelUploader\LaravelUploader;
 
 /**
- * IIS 服务器请在【HTTP响应标头】中设置以下值
+ * IIS 服务器请在【HTTP响应标头】中设置以下值，并修改`config/cors.php`：
+ *     'allowed_origins' => [],
  */
 // header('Access-Control-Allow-Origin: *');
-// header('Access-Control-Allow-Headers: Authorization, Content-Type, Access-Control-Allow-Headers, X-Requested-With');
+// header('Access-Control-Allow-Headers: *');
 // header('Access-Control-Allow-Methods: *');
 
 // Auth
