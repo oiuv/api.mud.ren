@@ -1,8 +1,8 @@
 @component('mail::message')
 
- [{{ '@' . $user->username }}]({{ $user->url }})  发布文章，已触发敏感词过滤五次。
+[{{ '@' . $user->username }}]({{ $user->url }})  发布文章，已触发敏感词过滤。
 
- Thanks.
+Thanks.
 
- {{ config('app.name') }}
+{{ config('app.name') }}
 @endcomponent
