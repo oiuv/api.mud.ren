@@ -11,6 +11,7 @@
 
 ## 运行环境要求
 
+- PHP 7.3(暂不支持v7.4，因为v7.4以数组形式访问非数组会抛出 notice 通知，造成发贴预览功能失效)
 - ElasticSearch 6.*
 - [ElasticSearch ik 插件](https://github.com/medcl/elasticsearch-analysis-ik)
 
