@@ -6,8 +6,4 @@
 {!! $comment->content->activity_log_content !!}
 @endcomponent
 
-
-Thanks.
-
-{{ config('app.name') }}
 @endcomponent
