@@ -97,15 +97,19 @@ class EsEngine extends ElasticsearchEngine
         )->get()->keyBy($model->getKeyName());
 
         return collect($results['hits']['hits'])->map(function ($hit) use ($model, $models) {
-            $one = $models[$hit['_id']];
-            /*
-             * 这里返回的数据，如果有 highlight，就把对应的  highlight 设置到对象上面
-             */
-            if (isset($hit['highlight'])) {
-                $one->highlights = $hit['highlight'];
-            }
+            $id = $hit['_id'];
+            if ($models->has($id)) {
+                $one = $models[$id];
+                /*
+                 * 这里返回的数据，如果有 highlight，就把对应的  highlight 设置到对象上面
+                 */
+                if (isset($hit['highlight'])) {
+                    $one->highlights = $hit['highlight'];
+                }
 
-            return $one;
-        });
+                return $one;
+            }
+            return null; // 或者根据实际情况处理不存在的模型
+        })->filter(); // 过滤掉 null 值
     }
 }
