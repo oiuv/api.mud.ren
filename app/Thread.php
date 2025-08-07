@@ -154,6 +154,11 @@ class Thread extends Model implements Commentable
         return array_merge(\array_except($this->toArray(), 'user'), \compact('content'));
     }
 
+    public function searchableAs()
+    {
+        return 'App\Thread';
+    }
+
     public function comments()
     {
         return $this->morphMany(Comment::class, 'commentable');
