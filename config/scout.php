@@ -88,7 +88,7 @@ return [
     ],
 
     'elasticsearch' => [
-        'index' => env('ELASTICSEARCH_INDEX', 'mudren'),
+        'index' => env('ELASTICSEARCH_INDEX', 'threads'),
         'hosts' => [
             env('ELASTICSEARCH_HOST', 'http://127.0.0.1:9200'),
         ],

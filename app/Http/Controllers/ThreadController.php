@@ -34,7 +34,8 @@ class ThreadController extends Controller
 
     public function search(Request $request)
     {
-        $threads = Thread::search($request->q)->paginate(10);
+        $searchTerm = $request->input('q', $request->input('query'));
+        $threads = Thread::search($searchTerm)->paginate(10);
 
         return ThreadResource::collection($threads);
     }
