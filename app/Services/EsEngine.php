@@ -35,7 +35,7 @@ class EsEngine extends ElasticsearchEngine
     {
         $params = [
             'index' => config('scout.elasticsearch.index'),
-            'type' => $builder->model->searchableAs(),
+            'type' => $builder->model->searchableType(),
             'body' => [
                 'query' => [
                     'multi_match' => [
