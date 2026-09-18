@@ -3,13 +3,11 @@
 
 <h1 align="left"><a href="https://bbs.mud.ren">bbs.mud.ren</a></h1>
 
-此项目为 https://bbs.mud.ren 的后端 API，基于 Laravel 开发。
+本项目是 [mud.ren 社区论坛](https://bbs.mud.ren) 的后端 API，基于 Laravel 6.x 开发，由本项目独立维护。
 
 开发与 AI 协作约定见 [AGENTS.md](AGENTS.md)。
 
-> 🏵前端源码：https://github.com/oiuv/bbs.mud.ren
-
-> 🎬快速上手视频：[053. 优秀的开源社区——yike.io](https://learnku.com/courses/laravel-package/yikeio/2505)
+前端源码：[mudbbs](https://github.com/oiuv/bbs.mud.ren)。
 
 ## 运行环境要求
 
@@ -19,7 +17,7 @@
 
 ## 开发环境部署/安装
 
-本项目代码使用 PHP 框架 [Laravel 6.x](https://learnku.com/docs/laravel/) 开发。
+当前项目使用 PHP 7.4 和 Laravel 6.x，依赖版本以 `composer.lock` 为准。
 
 下文将在假定读者已经安装好了 Homestead 的情况下进行说明。
 
@@ -85,15 +83,15 @@ DB_USERNAME=homestead
 DB_PASSWORD=secret
 ```
 
-#### 生成数据表及生成测试数据
+#### 生成数据表
 
 在 Homestead 的网站根目录下运行以下命令
 
 ```shell
-$ php artisan migrate --seed
+php artisan migrate
 ```
 
-初始的用户角色权限已使用数据迁移生成。
+当前 `DatabaseSeeder` 没有预设数据，也不会创建默认管理员账号。
 
 #### 生成秘钥
 
@@ -147,17 +145,14 @@ ELASTICSEARCH_HOST=http://127.0.0.1:9200
 ...
 ```
 
-### 链接入口
+### 服务入口与管理员
 
-* 首页地址：http://api.mud.ren.test
-* 管理后台：https://github.com/mudren/mud.ren
+- 论坛入口：https://bbs.mud.ren
+- 本地 API：http://api.mud.ren.test（使用上述 Homestead 配置时）。
 
-管理员账号请自己添加 UserSeeder 创建。
-
-至此, 安装完成 ^_^。
+管理员身份由 `users.is_admin` 字段控制，管理操作通过论坛前端调用本项目 API。
 
 ## 扩展包使用情况
-
 
 | **扩展包** | **一句话描述** | **本项目应用场景** |
 | ---- | ---- | ---- |
@@ -165,39 +160,28 @@ ELASTICSEARCH_HOST=http://127.0.0.1:9200
 | [overtrue/laravel-emoji](https://github.com/overtrue/laravel-emoji) | emoji 转换组件 | 帖子与评论 emoji 解析 |
 | [overtrue/laravel-filesystem-qiniu](https://github.com/overtrue/laravel-filesystem-qiniu) | 七牛 CDN SDK | 帖子内容图片存储 |
 | [overtrue/laravel-follow](https://github.com/overtrue/laravel-follow) | Laravel 用户关系组件 | 用户关注与帖子订阅 |
-| [overtrue/laravel-lang](https://github.com/overtrue/laravel-lang) | Laravel 多语言 | 报错信息本地化 |
 | [overtrue/laravel-mail-aliyun](https://github.com/overtrue/laravel-mail-aliyun) | 阿里云邮件 SDK | 发送通知邮件 |
 | [overtrue/laravel-socialite](https://github.com/overtrue/laravel-socialite) | 社交登录组件 | 用户使用第三方登录 |
 | [overtrue/laravel-uploader](https://github.com/overtrue/laravel-uploader) | Laravel 上传功能封装 | 帖子内容图片上传 |
 | [overtrue/laravel-query-logger](https://github.com/overtrue/laravel-query-logger) | Laravel SQL 监听工具 | 开发环境查看 SQL 记录 |
 | [Intervention/image](https://github.com/Intervention/image) | 图片处理功能库 | 用于图片裁切 |
-| [guzzlehttp/guzzle](https://github.com/guzzle/guzzle) | HTTP 请求套件 | 我也记不得，反正就是要用  |
-| [predis/predis](https://github.com/nrk/predis.git) | Redis 官方首推的 PHP 客户端开发包 | 缓存驱动 Redis 基础扩展包 |
+| [guzzlehttp/guzzle](https://github.com/guzzle/guzzle) | HTTP 请求客户端 | 调用外部服务及初始化搜索索引 |
+| [predis/predis](https://github.com/nrk/predis.git) | Redis PHP 客户端 | 缓存驱动 Redis 基础扩展包 |
 | [mewebstudio/Purifier](https://github.com/mewebstudio/Purifier) | 用户提交的 Html 白名单过滤 | 帖子内容的 Html 安全过滤，防止 XSS 攻击 |
-| [laravel/passport](https://github.com/laravel/passport) | 用户授权 | 基于 Personal Access Token 的前后端用户认证 |
-| [laravel/horizon](https://github.com/laravel/horizon) | 队列监控面板 | 监听队列使用情况 |
+| [laravel/passport](https://github.com/laravel/passport) | 用户授权 | OAuth 2.0 令牌认证 |
 | [laravolt/avatar](https://github.com/laravolt/avatar) | 生成用户头像 | 用户头像 |
 | [sentry/sentry-laravel](https://github.com/getsentry/sentry-laravel) | Sentry 报错监控 | 监控系统错误 |
 | [spatie/laravel-activitylog](https://github.com/spatie/laravel-activitylog) | 用户行为记录 | 个人中心的用户动态 |
-| [spatie/laravel-url-signer](https://github.com/spatie/laravel-url-signer) | URL 加密 | 用户激活链接 |
 | [tamayo/laravel-scout-elastic](https://github.com/ErickTamayo/laravel-scout-elastic) | Laravel Scout ES 驱动 | 帖子搜索 |
 | [tucker-eric/eloquentfilter](https://github.com/tucker-eric/eloquentfilter) | 模型字段过滤 | 接口字段过滤 |
-| [vinkla/hashids](https://github.com/vinkla/hashids) | HashID 实现 | 暂时好像没用到 |
+| [vinkla/hashids](https://github.com/vinkla/hashids) | HashID 实现 | 保留的标识符编码依赖 |
 | [beyondcode/laravel-self-diagnosis](https://github.com/beyondcode/laravel-self-diagnosis) | Laravel 基础环境检查工具 | 检查配置是否正确 |
-
-
 
 ## 自定义 Artisan 命令
 
 | 命令行名字 | 说明 | Cron | 代码调用 |
 | --- | --- | --- | --- |
-| `es:init` |  初始化 ES 模板 | 无 | 无 |
-
-
-## PHP 扩展包开发
-
-想知道如何从零开始构建 PHP 扩展包？请关注[《PHP 扩展包实战教程 - 从入门到发布》](https://learnku.com/courses/creating-package)
-
+| `es:init` | 初始化 ES 模板并重建索引，会删除原索引 | 无 | 无 |
 
 ## License
 
