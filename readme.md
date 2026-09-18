@@ -200,3 +200,27 @@ ELASTICSEARCH_HOST=http://127.0.0.1:9200
 ## License
 
 MIT
+
+## 回归测试
+
+安装开发依赖后使用项目现有的 PHP 7.4 运行（需要 PDO SQLite 扩展）：
+
+```shell
+php vendor/bin/phpunit
+```
+
+测试强制使用 SQLite 内存数据库，跳过本地 .env 和生产配置缓存，隔离队列、邮件、验证码与 Elasticsearch；不需要连接实际论坛数据库或外部 AI 服务。
+覆盖用户资料权限、管理字段、用户名查询、密码重置有效期、帖子读写、搜索可见性及连续超过 60 次的正文读取。
+
+## RAG 接入与修复部署
+
+论坛 API 已取消统一的每分钟 60 次限流，`GET /threads/{id}` 可供 mudrenRAG 连续获取正文。JSON 格式与地址保持不变，RAG 无需改配置。发帖频率、验证码和登录权限检查仍然生效。
+
+本次修复沿用当前 PHP / Laravel / Composer 依赖，不涉及数据库结构变更。部署代码后，按现有部署流程刷新路由缓存并重启队列工作进程；使用 IIS / PHP OPcache 时需回收对应应用池或重载 PHP 进程，使新代码生效：
+
+```shell
+php artisan route:clear
+php artisan queue:restart
+```
+
+搜索结果会按数据库中的公开状态过滤旧索引命中。若上线后仍有 429，检查反向代理、IIS 或 CDN 上独立设置的限流；这些配置不由此仓库控制。

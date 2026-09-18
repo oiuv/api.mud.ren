@@ -15,33 +15,33 @@ class NotificationTest extends TestCase
     {
         $user = \factory(User::class)->create();
 
-        $user->notify(new Welcome());
+        $user->notifyNow(new Welcome());
 
         // not logged
-        $this->getJson('api/notifications')->assertStatus(401);
+        $this->getJson('/notifications')->assertStatus(401);
 
         // logged
-        $notifications = json_decode($this->actingAs($user, 'api')->getJson('api/notifications')
+        $notifications = json_decode($this->actingAs($user, 'api')->getJson('/notifications')
             ->assertStatus(200)
             ->getContent(), true);
 
         $this->assertCount(1, $notifications);
-        $this->assertArraySubset(['data' => ['user_id' => $user->id]], $notifications[0]);
+        $this->assertSame($user->id, $notifications[0]['data']['user_id']);
     }
 
     public function testUserCanMarkNotificationAsRead()
     {
         $user = \factory(User::class)->create();
 
-        $user->notify(new Welcome());
+        $user->notifyNow(new Welcome());
 
-        $notifications = json_decode($this->actingAs($user, 'api')->getJson('api/notifications')
+        $notifications = json_decode($this->actingAs($user, 'api')->getJson('/notifications')
             ->assertStatus(200)
             ->getContent(), true);
         $first = $notifications[0];
 
-        $this->patchJson('api/notifications/'.$first['id'])->assertStatus(200);
-        $notifications = json_decode($this->actingAs($user, 'api')->getJson('api/notifications')
+        $this->patchJson('/notifications/'.$first['id'])->assertStatus(200);
+        $notifications = json_decode($this->actingAs($user, 'api')->getJson('/notifications')
             ->assertStatus(200)
             ->getContent(), true);
         $first = $notifications[0];
@@ -53,13 +53,13 @@ class NotificationTest extends TestCase
     {
         $user = \factory(User::class)->create();
 
-        $user->notify(new Welcome());
-        $user->notify(new Welcome());
+        $user->notifyNow(new Welcome());
+        $user->notifyNow(new Welcome());
 
-        $this->actingAs($user, 'api')->postJson('api/notifications/mark-all-as-read')
+        $this->actingAs($user, 'api')->postJson('/notifications/mark-all-as-read')
                 ->assertStatus(200);
 
-        $notifications = json_decode($this->actingAs($user, 'api')->getJson('api/notifications')
+        $notifications = json_decode($this->actingAs($user, 'api')->getJson('/notifications')
             ->assertStatus(200)
             ->getContent(), true);
 

@@ -13,12 +13,8 @@ class ContentController extends Controller
         return Content::toHTML($request->get('markdown'));
     }
 
-
     /**
      * Update the specified resource in storage.
-     *
-     * @param \Illuminate\Http\Request $request
-     * @param \App\Content             $content
      *
      * @return \App\Http\Resources\ContentResource
      *
@@ -32,7 +28,7 @@ class ContentController extends Controller
             'markdown' => 'required',
         ]);
 
-        $content->update($request->all());
+        $content->update($request->only('markdown'));
 
         return new ContentResource($content);
     }

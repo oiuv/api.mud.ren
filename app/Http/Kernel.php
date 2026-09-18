@@ -40,7 +40,7 @@ class Kernel extends HttpKernel
         ],
 
         'api' => [
-            'throttle:60,1',
+            // RAG retrieves multiple posts per query; do not impose a shared API quota.
             'bindings',
         ],
     ];

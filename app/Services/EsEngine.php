@@ -26,9 +26,6 @@ class EsEngine extends ElasticsearchEngine
     /**
      * Perform the given search on the engine.
      *
-     * @param Builder $builder
-     * @param array   $options
-     *
      * @return mixed
      */
     protected function performSearch(Builder $builder, array $options = [])
@@ -92,11 +89,13 @@ class EsEngine extends ElasticsearchEngine
         $keys = collect($results['hits']['hits'])
             ->pluck('_id')->values()->all();
 
-        $models = $model->whereIn(
-            $model->getKeyName(), $keys
-        )->get()->keyBy($model->getKeyName());
+        $query = $model->newQuery();
+        if ($builder->queryCallback) {
+            call_user_func($builder->queryCallback, $query);
+        }
+        $models = $query->whereIn($model->getKeyName(), $keys)->get()->keyBy($model->getKeyName());
 
-        return collect($results['hits']['hits'])->map(function ($hit) use ($model, $models) {
+        return collect($results['hits']['hits'])->map(function ($hit) use ($models) {
             $id = $hit['_id'];
             if ($models->has($id)) {
                 $one = $models[$id];
@@ -109,7 +108,8 @@ class EsEngine extends ElasticsearchEngine
 
                 return $one;
             }
+
             return null; // 或者根据实际情况处理不存在的模型
-        })->filter(); // 过滤掉 null 值
+        })->filter()->values(); // 过滤掉 null 值并保持 JSON 数组结构
     }
 }

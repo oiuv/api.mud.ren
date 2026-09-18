@@ -12,28 +12,33 @@ class CommentTest extends TestCase
     {
         $user = \factory(User::class)->states('activated')->create();
 
-        $this->actingAs($user, 'api')->postJson('api/threads', [
+        $this->actingAs($user, 'api')->postJson('/threads', [
                 'title' => 'Hello world!',
-                'body' => 'hello every one.',
+                'node_id' => 1,
+                'type' => 'markdown',
+                'content' => ['markdown' => 'hello every one.'],
+                'ticket' => 'fake-test-ticket',
             ])
             ->assertStatus(201);
 
         // activated
         $this->actingAs($user, 'api')
-            ->postJson('api/comments', [
+            ->postJson('/comments', [
                 'commentable_type' => Thread::class,
                 'commentable_id' => 1,
-                'body' => 'Very Good!',
+                'type' => 'markdown',
+                'content' => ['markdown' => 'Very Good!'],
             ])
             ->assertStatus(201);
 
         // not activated
         $user = \factory(User::class)->create();
 
-        $this->actingAs($user, 'api')->postJson('api/comments', [
+        $this->actingAs($user, 'api')->postJson('/comments', [
             'commentable_type' => Thread::class,
             'commentable_id' => 1,
-            'body' => 'Very Good!',
+            'type' => 'markdown',
+                'content' => ['markdown' => 'Very Good!'],
         ])->assertStatus(403);
     }
 
@@ -41,35 +46,40 @@ class CommentTest extends TestCase
     {
         $user = \factory(User::class)->states('activated')->create();
 
-        $this->actingAs($user, 'api')->postJson('api/threads', [
+        $this->actingAs($user, 'api')->postJson('/threads', [
                 'title' => 'Hello world!',
-                'body' => 'hello every one.',
+                'node_id' => 1,
+                'type' => 'markdown',
+                'content' => ['markdown' => 'hello every one.'],
+                'ticket' => 'fake-test-ticket',
             ])
             ->assertStatus(201);
 
-        $this->postJson('api/comments', [
+        $this->postJson('/comments', [
                 'commentable_type' => Thread::class,
                 'commentable_id' => 1,
-                'body' => 'Very Good!',
+                'type' => 'markdown',
+                'content' => ['markdown' => 'Very Good!'],
             ])
             ->assertStatus(201)
             ->assertJsonFragment([
                 'user_id' => 1,
                 'commentable_type' => Thread::class,
                 'commentable_id' => 1,
-                'body' => 'Very Good!',
+                'body' => '<p>Very Good!</p>',
             ]);
     }
 
     public function testUserCannotCommentInvalidObject()
     {
-        $user = \factory(User::class)->create();
+        $user = \factory(User::class)->states('activated')->create();
 
         $this->actingAs($user, 'api')
-                ->postJson('api/comments', [
+                ->postJson('/comments', [
                 'commentable_type' => 'App\\ClassNotExists',
                 'commentable_id' => 1,
-                'body' => 'Very Good!',
+                'type' => 'markdown',
+                'content' => ['markdown' => 'Very Good!'],
             ])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['commentable_id']);

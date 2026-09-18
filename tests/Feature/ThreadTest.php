@@ -9,19 +9,19 @@ class ThreadTest extends TestCase
 {
     public function testCreateThreadWithoutLogin()
     {
-        $this->postJson('api/threads', ['title' => 'Hello world!', 'body' => 'hello every one.'])
+        $this->postJson('/threads', $this->threadPayload())
             ->assertStatus(401);
     }
 
     public function testOnlyUserActivatedCanCreateThread()
     {
         $user = \factory(User::class)->create();
-        $this->actingAs($user, 'api')->postJson('api/threads', ['title' => 'Hello world!', 'body' => 'hello every one.'])
+        $this->actingAs($user, 'api')->postJson('/threads', $this->threadPayload())
             ->assertStatus(403);
 
         // activated
         $userActivated = \factory(User::class)->states('activated')->create();
-        $this->actingAs($userActivated, 'api')->postJson('api/threads', ['title' => 'Hello world!', 'body' => 'hello every one.'])
+        $this->actingAs($userActivated, 'api')->postJson('/threads', $this->threadPayload())
             ->assertStatus(201);
     }
 
@@ -32,17 +32,19 @@ class ThreadTest extends TestCase
     {
         $user = \factory(User::class)->states('activated')->create();
 
-        $this->actingAs($user, 'api')->postJson('api/threads', ['title' => 'Hello world!', 'body' => 'hello every one.'])
+        $this->actingAs($user, 'api')->postJson('/threads', $this->threadPayload())
             ->assertStatus(201)
             ->assertJsonStructure(['title', 'user_id', 'content' => ['body']])
-            ->assertJsonFragment(['title' => 'Hello world!', 'body' => 'hello every one.']);
+            ->assertJsonFragment(['title' => 'Hello world!', 'body' => '<p>hello every one.</p>']);
 
-        $this->actingAs($user, 'api')->patchJson('api/threads/1', [
+        $this->actingAs($user, 'api')->patchJson('/threads/1', [
             'title' => 'The New Title',
-            'body' => 'updated content.',
+            'type' => 'markdown',
+            'content' => ['markdown' => 'updated content.'],
+            'ticket' => 'fake-test-ticket',
         ])->assertJsonFragment([
             'title' => 'The New Title',
-            'body' => 'updated content.',
+            'body' => '<p>updated content.</p>',
         ]);
     }
 
@@ -51,10 +53,10 @@ class ThreadTest extends TestCase
         $user1 = \factory(User::class)->states('activated')->create();
         $user2 = \factory(User::class)->states('activated')->create();
 
-        $this->actingAs($user1, 'api')->postJson('api/threads', ['title' => 'Hello world!', 'body' => 'hello every one.'])
+        $this->actingAs($user1, 'api')->postJson('/threads', $this->threadPayload())
             ->assertStatus(201);
 
-        $this->actingAs($user2, 'api')->patchJson('api/threads/1', ['title' => 'Hello world!', 'body' => 'hello every one.'])
+        $this->actingAs($user2, 'api')->patchJson('/threads/1', $this->threadPayload())
             ->assertForbidden();
     }
 
@@ -62,15 +64,15 @@ class ThreadTest extends TestCase
     {
         $user = \factory(User::class)->states('activated')->create();
 
-        $this->actingAs($user, 'api')->postJson('api/threads', ['title' => 'Hello world!', 'body' => 'hello every one.'])
+        $this->actingAs($user, 'api')->postJson('/threads', $this->threadPayload())
             ->assertStatus(201)
             ->assertJsonStructure(['title', 'user_id', 'content' => ['body']])
-            ->assertJsonFragment(['title' => 'Hello world!', 'body' => 'hello every one.']);
+            ->assertJsonFragment(['title' => 'Hello world!', 'body' => '<p>hello every one.</p>']);
 
-        $this->get('api/threads/1')->assertJsonFragment([
+        $this->get('/threads/1')->assertJsonFragment([
             'title' => 'Hello world!',
             'user_id' => 1,
-            'body' => 'hello every one.',
+            'body' => '<p>hello every one.</p>',
         ]);
     }
 
@@ -79,13 +81,13 @@ class ThreadTest extends TestCase
         $user1 = \factory(User::class)->states('activated')->create();
         $user2 = \factory(User::class)->states('activated')->create();
 
-        $this->actingAs($user1, 'api')->postJson('api/threads', ['title' => 'Hello world!', 'body' => 'hello every one.'])
+        $this->actingAs($user1, 'api')->postJson('/threads', $this->threadPayload())
             ->assertStatus(201);
 
         // another user
-        $this->actingAs($user2, 'api')->deleteJson('api/threads/1')->assertForbidden();
+        $this->actingAs($user2, 'api')->deleteJson('/threads/1')->assertForbidden();
 
         // author
-        $this->actingAs($user1, 'api')->deleteJson('api/threads/1')->assertStatus(204);
+        $this->actingAs($user1, 'api')->deleteJson('/threads/1')->assertStatus(204);
     }
 }

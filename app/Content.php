@@ -25,7 +25,12 @@ use Mews\Purifier\Facades\Purifier;
  */
 class Content extends Model
 {
-    use SoftDeletes, Filterable, OnlyActivatedUserCanCreate;
+    use SoftDeletes;
+    use Filterable;
+    use OnlyActivatedUserCanCreate;
+
+    // Thread writes defer mention jobs until their transaction has committed.
+    public $deferMentions = false;
 
     protected $fillable = [
         'contentable_type', 'contentable_id', 'body', 'markdown',
@@ -49,7 +54,9 @@ class Content extends Model
         });
 
         static::saved(function ($content) {
-            \dispatch(new FetchContentMentions($content));
+            if (!$content->deferMentions) {
+                \dispatch(new FetchContentMentions($content));
+            }
         });
     }
 

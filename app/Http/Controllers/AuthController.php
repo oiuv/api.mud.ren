@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\RegisterRequest;
 use App\User;
-use App\PasswordReset as PWRT;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -15,7 +14,7 @@ class AuthController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api')->except(['register', 'forgetPassword','reset', 'resetPassword', 'resetPasswordByToken']);
+        $this->middleware('auth:api')->except(['register', 'forgetPassword', 'reset', 'resetPassword', 'resetPasswordByToken']);
     }
 
     public function register(RegisterRequest $request)
@@ -44,9 +43,11 @@ class AuthController extends Controller
 
     public function resetPassword(Request $request)
     {
+        abort_unless($request->user(), 401);
+
         $request->validate([
-            'old_password' => 'required|hash:'.auth()->user()->password,
-            'password' => 'required|different:old_password|confirmed|min:6',
+            'old_password' => 'required|string|hash:'.auth()->user()->password,
+            'password' => 'required|string|different:old_password|confirmed|min:6',
         ], [
             'old_password.hash' => '旧密码输入错误！',
         ], [
@@ -59,41 +60,42 @@ class AuthController extends Controller
 
         return response()->json([
             'status' => 200,
-            'message' => '密码修改成功 ^_^'
+            'message' => '密码修改成功 ^_^',
         ]);
     }
 
     public function resetPasswordByToken(Request $request)
     {
         $this->validate($request, [
-            'token' => 'required',
+            'token' => 'required|string',
             'email' => 'required|email',
-            'password' => 'required|confirmed|min:6',
+            'password' => 'required|string|confirmed|min:6',
         ]);
 
-        $email = $request->input('email');
-        if (Hash::check($request->input('token'), PWRT::where('email', $email)->value('token'))) {
-            User::where('email', $email)->update([
-                'password' => bcrypt($request->input('password')),
-            ]);
-            PWRT::where('email', $email)->delete();
+        $status = $this->broker()->reset($this->credentials($request), function (User $user, $password) {
+            $user->password = Hash::make($password);
+            $user->setRememberToken(Str::random(60));
+            $user->save();
 
+            event(new PasswordReset($user));
+        });
+
+        if ($status === Password::PASSWORD_RESET) {
             return response()->json([
                 'status' => 200,
-                'message' => '密码修改成功，请重新登录！'
-            ]);
-        } else {
-            return response()->json([
-                'status' => 404,
-                'message' => '密码修改失败，请重新发送找回密码邮件！'
+                'message' => '密码修改成功，请重新登录！',
             ]);
         }
+
+        return response()->json([
+            'status' => 422,
+            'message' => '密码修改失败，请重新发送找回密码邮件！',
+            'errors' => ['token' => ['密码修改失败，请重新发送找回密码邮件！']],
+        ], 422);
     }
 
     /**
      * Get the password reset credentials from the request.
-     *
-     * @param \Illuminate\Http\Request $request
      *
      * @return array
      */

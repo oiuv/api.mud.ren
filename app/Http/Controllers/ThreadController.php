@@ -17,8 +17,6 @@ class ThreadController extends Controller
     /**
      * Display a listing of the resource.
      *
-     * @param \Illuminate\Http\Request $request
-     *
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
     public function index(Request $request)
@@ -35,7 +33,9 @@ class ThreadController extends Controller
     public function search(Request $request)
     {
         $searchTerm = $request->input('q', $request->input('query'));
-        $threads = Thread::search($searchTerm)->paginate(10);
+        $threads = Thread::search($searchTerm)->query(function ($query) {
+            $query->published();
+        })->paginate(10);
 
         return ThreadResource::collection($threads);
     }
@@ -57,8 +57,6 @@ class ThreadController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param \Illuminate\Http\Request $request
-     *
      * @return \App\Http\Resources\ThreadResource
      *
      * @throws \Illuminate\Auth\Access\AuthorizationException
@@ -68,41 +66,41 @@ class ThreadController extends Controller
         $this->authorize('create', Thread::class);
         $this->validate($request, [
             'title' => 'required|min:6|user_unique_content:threads,title',
-            'type' => 'in:markdown,html',
-            'content.body' => 'required_if:type,html',
-            'content.markdown' => 'required_if:type,markdown',
+            'type' => 'required|in:markdown,html',
+            'node_id' => 'required|integer|exists:nodes,id',
+            'content' => 'required|array',
+            'content.body' => 'required_if:type,html|nullable|string',
+            'content.markdown' => 'required_if:type,markdown|nullable|string',
             'ticket' => 'required|ticket:publish',
             'is_draft' => 'boolean',
         ]);
 
-        return new ThreadResource(Thread::create($request->all()));
+        return new ThreadResource($this->saveThread($request, new Thread()));
     }
 
     /**
-     * @param \App\Thread $thread
-     *
      * @return \App\Http\Resources\ThreadResource
      */
     public function show(Thread $thread)
     {
-        $thread->loadMissing('content');
-
-        $thread->update(['cache->views_count' => $thread->cache['views_count'] + 1]);
-
-        if (!$thread->user->is_valid) {
-            \abort(404);
+        if (!$thread->shouldBeSearchable() && !optional(auth()->user())->is_admin
+            && !(optional(auth()->user())->is_valid && auth()->id() === $thread->user_id && !$thread->banned_at)) {
+            abort(404);
         }
 
-        \dispatch(new ThreadAddPopular($thread));
+        $thread->loadMissing('content');
+
+        if ($thread->shouldBeSearchable()) {
+            // Bypass model write hooks and leave publication/content/timestamps untouched.
+            $thread->incrementViews();
+            \dispatch(new ThreadAddPopular($thread));
+        }
 
         return new ThreadResource($thread);
     }
 
     /**
      * Update the specified resource in storage.
-     *
-     * @param \Illuminate\Http\Request $request
-     * @param \App\Thread              $thread
      *
      * @return \App\Http\Resources\ThreadResource
      *
@@ -114,9 +112,11 @@ class ThreadController extends Controller
 
         $rules = [
             'title' => 'required|min:6|user_unique_content:threads,title,'.$thread->id,
-            'type' => 'in:markdown,html',
-            'content.body' => 'required_if:type,html',
-            'content.markdown' => 'required_if:type,markdown',
+            'type' => 'sometimes|in:markdown,html',
+            'node_id' => 'sometimes|required|integer|exists:nodes,id',
+            'content' => 'sometimes|array',
+            'content.body' => 'required_if:type,html|nullable|string',
+            'content.markdown' => 'required_if:type,markdown|nullable|string',
             'is_draft' => 'boolean',
         ];
 
@@ -128,15 +128,13 @@ class ThreadController extends Controller
             'ticket.required' => '请先完成验证',
         ]);
 
-        $thread->update($request->all());
+        $this->saveThread($request, $thread);
 
         return new ThreadResource($thread);
     }
 
     /**
      * Remove the specified resource from storage.
-     *
-     * @param \App\Thread $thread
      *
      * @return \Illuminate\Http\JsonResponse
      *
@@ -150,5 +148,29 @@ class ThreadController extends Controller
         $thread->delete();
 
         return $this->withNoContent();
+    }
+
+    protected function saveThread(Request $request, Thread $thread)
+    {
+        $attributes = $request->only(array_merge(['title', 'node_id'], Thread::SENSITIVE_FIELDS));
+        $request->validate(array_fill_keys(Thread::SENSITIVE_FIELDS, 'sometimes|nullable|date'));
+
+        if (!$thread->exists || $request->has('is_draft')) {
+            $attributes['published_at'] = $request->input('is_draft', false)
+                ? null : ($thread->published_at ?: now());
+        }
+
+        $content = null;
+        if ($request->has('content')) {
+            $type = $request->input('type', $request->filled('content.markdown') ? 'markdown' : 'html');
+            $field = $type === 'html' ? 'body' : 'markdown';
+            $request->validate(['content.'.$field => 'required|string']);
+            $content = [$field => $request->input('content.'.$field)];
+            if ($field === 'body') {
+                $content['markdown'] = null;
+            }
+        }
+
+        return $thread->saveWithContent($attributes, $content);
     }
 }

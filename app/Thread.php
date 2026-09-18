@@ -3,6 +3,7 @@
 namespace App;
 
 use App\Contracts\Commentable;
+use App\Jobs\FetchContentMentions;
 use App\Jobs\FilterThreadSensitiveWords;
 use App\Traits\EsHighlightAttributes;
 use App\Traits\OnlyActivatedUserCanCreate;
@@ -10,6 +11,7 @@ use App\Traits\WithDiffForHumanTimes;
 use EloquentFilter\Filterable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 use Laravel\Scout\Searchable;
 use Overtrue\LaravelFollow\Traits\CanBeFavorited;
 use Overtrue\LaravelFollow\Traits\CanBeLiked;
@@ -36,8 +38,15 @@ use Overtrue\LaravelFollow\Traits\CanBeSubscribed;
  */
 class Thread extends Model implements Commentable
 {
-    use SoftDeletes, Filterable, OnlyActivatedUserCanCreate, WithDiffForHumanTimes,
-        CanBeSubscribed, CanBeFavorited, CanBeLiked, Searchable, EsHighlightAttributes;
+    use SoftDeletes;
+    use Filterable;
+    use OnlyActivatedUserCanCreate;
+    use WithDiffForHumanTimes;
+    use CanBeSubscribed;
+    use CanBeFavorited;
+    use CanBeLiked;
+    use Searchable;
+    use EsHighlightAttributes;
 
     protected $fillable = [
         'user_id', 'title', 'excellent_at', 'node_id',
@@ -97,54 +106,78 @@ class Thread extends Model implements Commentable
         });
 
         static::saving(function (Thread $thread) {
-            if (\array_has($thread->getDirty(), self::SENSITIVE_FIELDS) && !\request()->user()->is_admin) {
-                abort('非法请求！');
+            if (array_intersect(array_keys($thread->getDirty()), self::SENSITIVE_FIELDS)
+                && !optional(auth()->user())->is_admin) {
+                abort(403, '非法请求！');
             }
 
-            foreach ($thread->getDirty() as $field => $value) {
-                if (\ends_with($field, '_at')) {
-                    $thread->$field = $value ? now() : null;
-                }
-            }
-
-            $thread->title = \dispatch_now(new FilterThreadSensitiveWords($thread->title));
-
-            if (\request('is_draft', false)) {
-                $thread->published_at = null;
-            } elseif (!$thread->published_at) {
-                $thread->published_at = now();
+            if ($thread->isDirty('title')) {
+                $thread->title = \dispatch_now(new FilterThreadSensitiveWords($thread->title));
             }
         });
-
-        $saveContent = function (Thread $thread) {
-            if (request()->routeIs('threads.*') && \request()->has('content')) {
-                $type = \request()->input('type', 'markdown');
-
-                $data = array_only(\request()->input('content', []), $type);
-
-                $data[$type] = \dispatch_now(new FilterThreadSensitiveWords(\array_get($data, $type)));
-
-                $thread->content()->updateOrCreate(['contentable_id' => $thread->id], $data);
-                $thread->loadMissing('content');
-            }
-        };
-
-        static::updated($saveContent);
-        static::created($saveContent);
 
         static::created(function (Thread $thread) {
             $thread->user->refreshCache();
         });
+    }
 
-        static::saved(function ($thread) {
-            if ($thread->wasRecentlyCreated) {
-                $thread->user->increment('energy', User::ENERGY_THREAD_CREATE);
-                \activity('published.thread')
-                    ->performedOn($thread)
-                    ->withProperty('content', \str_limit(\strip_tags($thread->content->body), 200))
-                    ->log('发布帖子');
-            }
+    public function saveWithContent(array $attributes, ?array $content = null)
+    {
+        static::withoutSyncingToSearch(function () use ($attributes, $content) {
+            DB::transaction(function () use ($attributes, $content) {
+                $creating = !$this->exists;
+                $publishing = !$this->published_at && !empty($attributes['published_at']);
+                $this->fill($attributes)->save();
+
+                if ($content !== null) {
+                    foreach ($content as $field => $value) {
+                        if ($value !== null) {
+                            $content[$field] = \dispatch_now(new FilterThreadSensitiveWords($value));
+                        }
+                    }
+                    $savedContent = $this->content()->firstOrNew([]);
+                    $savedContent->deferMentions = true;
+                    $savedContent->fill($content)->save();
+                    $savedContent->deferMentions = false;
+                    $this->setRelation('content', $savedContent);
+                }
+
+                if ($creating) {
+                    $this->user->increment('energy', User::ENERGY_THREAD_CREATE);
+                }
+                if ($publishing && !Activity::where('log_name', 'published.thread')
+                    ->where('subject_type', self::class)->where('subject_id', $this->id)->exists()) {
+                    \activity('published.thread')
+                        ->performedOn($this)
+                        ->withProperty('content', \str_limit(\strip_tags(optional($this->content)->body), 200))
+                        ->log('发布帖子');
+                }
+            });
         });
+
+        if ($content !== null) {
+            \dispatch(new FetchContentMentions($this->content));
+        }
+
+        // Index only after the body and the transaction have been saved.
+        $this->shouldBeSearchable() ? $this->searchable() : $this->unsearchable();
+
+        return $this;
+    }
+
+    public function shouldBeSearchable()
+    {
+        return $this->published_at && $this->published_at->lte(now())
+            && !$this->banned_at && !$this->trashed() && optional($this->user)->is_valid;
+    }
+
+    public function incrementViews()
+    {
+        // Atomic JSON update supports both MySQL and SQLite, including a NULL cache.
+        $this->newQuery()->whereKey($this->id)->toBase()->update([
+            'cache' => DB::raw("JSON_SET(COALESCE(cache, '{}'), '$.views_count', COALESCE(JSON_EXTRACT(cache, '$.views_count'), 0) + 1)"),
+        ]);
+        $this->cache = array_merge($this->cache, ['views_count' => $this->cache['views_count'] + 1]);
     }
 
     public function toSearchableArray()
@@ -192,6 +225,7 @@ class Thread extends Model implements Commentable
     public function scopePublished($query)
     {
         $query->where('published_at', '<=', now())
+            ->whereNull('banned_at')
             ->whereHas('user', function ($q) {
                 $q->whereNotNull('activated_at')->whereNull('banned_at');
             });

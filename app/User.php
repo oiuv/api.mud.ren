@@ -62,7 +62,16 @@ use Overtrue\LaravelFollow\Traits\CanVote;
  */
 class User extends Authenticatable
 {
-    use HasApiTokens, Notifiable, Filterable, CanFavorite, CanLike, CanFollow, CanVote, CanSubscribe, CanBeFollowed, WithDiffForHumanTimes;
+    use HasApiTokens;
+    use Notifiable;
+    use Filterable;
+    use CanFavorite;
+    use CanLike;
+    use CanFollow;
+    use CanVote;
+    use CanSubscribe;
+    use CanBeFollowed;
+    use WithDiffForHumanTimes;
 
     /**
      * The attributes that are mass assignable.
@@ -162,8 +171,9 @@ class User extends Authenticatable
             //     $user->password = \bcrypt($user->password);
             // }
 
-            if (\array_has($user->getDirty(), self::UPDATE_SENSITIVE_FIELDS) && !\request()->user()->is_admin) {
-                abort('非法请求！');
+            if (array_intersect(array_keys($user->getDirty()), self::UPDATE_SENSITIVE_FIELDS)
+                && !optional(auth()->user())->is_admin) {
+                abort(403, '非法请求！');
             }
 
             foreach ($user->getDirty() as $field => $value) {
@@ -283,7 +293,7 @@ class User extends Authenticatable
 
     public static function isUsernameExists(string $username)
     {
-        return self::whereRaw(\sprintf('lower(username) = "%s" ', \strtolower($username)))->exists();
+        return self::whereRaw('LOWER(username) = ?', [strtolower($username)])->exists();
     }
 
     public function getRouteKeyName()

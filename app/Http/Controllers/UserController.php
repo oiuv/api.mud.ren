@@ -28,6 +28,11 @@ class UserController extends Controller
 
     public function exists(Request $request)
     {
+        $request->validate([
+            'email' => 'sometimes|required|email',
+            'username' => 'sometimes|required|string|max:255',
+        ]);
+
         if ($request->has('email')) {
             return ['success' => !User::whereEmail($request->get('email'))->exists()];
         }
@@ -130,8 +135,6 @@ class UserController extends Controller
     /**
      * Display the specified resource.
      *
-     * @param \App\User $user
-     *
      * @return \App\Http\Resources\UserResource
      */
     public function show(User $user)
@@ -142,23 +145,27 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param \Illuminate\Http\Request $request
-     * @param \App\User                $user
-     *
      * @return \App\Http\Resources\UserResource
      *
      * @throws \Illuminate\Auth\Access\AuthorizationException
      */
     public function update(Request $request, User $user)
     {
-        $this->authorize('update', auth()->user(), $user);
+        $this->authorize('update', $user);
 
         $this->validate($request, [
-            // validation rules...
+            'name' => 'sometimes|required|string|max:255',
+            'avatar' => 'sometimes|nullable|string|max:2048',
+            'realname' => 'sometimes|nullable|string|max:255',
+            'bio' => 'sometimes|nullable|string|max:255',
+            'extends' => 'sometimes|array',
+            'settings' => 'sometimes|nullable|array',
+            'gender' => 'sometimes|in:male,female',
+            'banned_at' => 'sometimes|nullable|date',
         ]);
 
         $user->update($request->only([
-            'name', 'avatar', 'realname', 'bio', 'extends', 'settings', 'cache', 'gender', 'banned_at',
+            'name', 'avatar', 'realname', 'bio', 'extends', 'settings', 'gender', 'banned_at',
         ]));
 
         return new UserResource($user);
