@@ -5,6 +5,8 @@
 
 此项目为 https://bbs.mud.ren 的后端 API，基于 Laravel 开发。
 
+开发与 AI 协作约定见 [AGENTS.md](AGENTS.md)。
+
 > 🏵前端源码：https://github.com/oiuv/bbs.mud.ren
 
 > 🎬快速上手视频：[053. 优秀的开源社区——yike.io](https://learnku.com/courses/laravel-package/yikeio/2505)
