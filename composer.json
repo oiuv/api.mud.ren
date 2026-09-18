@@ -2,54 +2,44 @@
     "name": "mudren/api.mud.ren",
     "description": "A Laravel application.",
     "type": "project",
+    "license": "MIT",
     "require": {
-        "php": "^7.4",
-        "beyondcode/laravel-self-diagnosis": "^1.0",
-        "elasticsearch/elasticsearch": "^6.80",
+        "php": "^8.3",
+        "beyondcode/laravel-self-diagnosis": "^3.1",
+        "erusev/parsedown": "~1.7.4",
         "erusev/parsedown-extra": "^0.8.1",
-        "fideloper/proxy": "^4.0",
-        "fruitcake/laravel-cors": "^2.2",
-        "guzzlehttp/guzzle": "^6.3",
-        "laravel/framework": "^6.0",
-        "laravel/helpers": "^1.5",
-        "laravel/passport": "^7.2",
-        "laravel/scout": "^8.0",
-        "laravel/tinker": "^1.0",
-        "laravolt/avatar": "^4.0",
-        "lcobucci/jwt": "3.3",
-        "mews/purifier": "^3.3",
-        "overtrue/easy-sms": "^1.0",
-        "overtrue/laravel-emoji": "^1.0",
-        "overtrue/laravel-filesystem-qiniu": "^1.0",
-        "overtrue/laravel-follow": "^1.0",
-        "overtrue/laravel-mail-aliyun": "^1.0.3",
-        "overtrue/laravel-socialite": "^2.0",
-        "overtrue/laravel-uploader": "^1.2",
-        "php-http/message-factory": "^1.1",
-        "predis/predis": "^1.1",
-        "sentry/sentry-laravel": "^1.0.1",
-        "spatie/laravel-activitylog": "^3.2",
-        "tamayo/laravel-scout-elastic": "^8.0",
-        "tucker-eric/eloquentfilter": "^3.0",
-        "vinkla/hashids": "^7.0"
+        "guzzlehttp/guzzle": "^7.9",
+        "joypixels/emoji-toolkit": "^11.0",
+        "laravel/framework": "^13.0",
+        "laravel/helpers": "^1.8",
+        "laravel/passport": "^13.8",
+        "laravel/tinker": "^3.0",
+        "laravolt/avatar": "^7.0",
+        "mews/purifier": "^3.4.4",
+        "overtrue/easy-sms": "^2.7",
+        "overtrue/laravel-follow": "^1.1.16",
+        "overtrue/laravel-uploader": "^3.4",
+        "predis/predis": "^3.0",
+        "sentry/sentry-laravel": "^4.27",
+        "spatie/laravel-activitylog": "^4.12",
+        "tucker-eric/eloquentfilter": "^3.6",
+        "vinkla/hashids": "^14.0"
     },
     "require-dev": {
         "ext-json": "*",
         "fakerphp/faker": "^1.19",
         "filp/whoops": "^2.0",
-        "friendsofphp/php-cs-fixer": "^2.13",
+        "friendsofphp/php-cs-fixer": "^3.0",
         "mockery/mockery": "^1.0",
-        "nunomaduro/collision": "^3.0",
-        "overtrue/laravel-query-logger": "^1.0",
-        "phpunit/phpunit": "^8.1"
+        "nunomaduro/collision": "^8.9",
+        "overtrue/laravel-query-logger": "^5.1",
+        "phpunit/phpunit": "^12.0"
     },
     "autoload": {
-        "classmap": [
-            "database/seeds",
-            "database/factories"
-        ],
+        "classmap": ["database/seeds"],
         "psr-4": {
-            "App\\": "app/"
+            "App\\": "app/",
+            "Database\\Factories\\": "database/factories/"
         }
     },
     "autoload-dev": {
@@ -78,11 +68,14 @@
     "config": {
         "preferred-install": "dist",
         "sort-packages": true,
+        "platform": {
+            "php": "8.3.0"
+        },
         "optimize-autoloader": true,
         "allow-plugins": {
             "php-http/discovery": true
         }
     },
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "prefer-stable": true
 }

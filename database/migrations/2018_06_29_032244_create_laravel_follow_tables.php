@@ -9,8 +9,8 @@
  * with this source code in the file LICENSE.
  */
 
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
 
 class CreateLaravelFollowTables extends Migration
 {
@@ -22,13 +22,8 @@ class CreateLaravelFollowTables extends Migration
         Schema::create(config('follow.followable_table', 'followables'), function (Blueprint $table) {
             $userForeignKey = config('follow.users_table_foreign_key', 'user_id');
 
-            // Laravel 5.8 session user is unsignedBigInteger
-            // https://github.com/laravel/framework/pull/28206/files
-            if ((float) app()->version() >= 5.8) {
-                $table->unsignedBigInteger($userForeignKey);
-            } else {
-                $table->unsignedInteger($userForeignKey);
-            }
+            // This application's users.id remains an unsigned INT on every framework version.
+            $table->unsignedInteger($userForeignKey);
 
             $table->unsignedInteger('followable_id');
             $table->string('followable_type')->index();

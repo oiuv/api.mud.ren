@@ -1,11 +1,16 @@
 language: php
 
 php:
-  - 7.2
+  - 8.3
+  - 8.4
+  - 8.5
 
 before_script:
   - composer self-update
   - composer install --no-interaction
 
 script:
-  - ./vendor/bin/php-cs-fixer fix --dry-run --diff 1>&2
+  - composer validate --strict
+  - composer check-platform-reqs
+  - php vendor/bin/phpunit
+  - php tests/runtime-smoke.php

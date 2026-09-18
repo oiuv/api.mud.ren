@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\ThreadResource;
 use App\Jobs\ThreadAddPopular;
+use App\Services\ThreadSearch;
 use App\Thread;
 use Illuminate\Http\Request;
 
@@ -23,19 +24,18 @@ class ThreadController extends Controller
     {
         $threads = Thread::published()
             ->orderByDesc('pinned_at')
-            //->orderByDesc('excellent_at')
-            //->orderByDesc('published_at')
+            // ->orderByDesc('excellent_at')
+            // ->orderByDesc('published_at')
             ->filter($request->all())->paginate($request->get('per_page', 20));
 
         return ThreadResource::collection($threads);
     }
 
-    public function search(Request $request)
+    public function search(Request $request, ThreadSearch $search)
     {
-        $searchTerm = $request->input('q', $request->input('query'));
-        $threads = Thread::search($searchTerm)->query(function ($query) {
-            $query->published();
-        })->paginate(10);
+        $request->validate(['q' => 'nullable|string|max:100', 'query' => 'nullable|string|max:100']);
+        $searchTerm = trim($request->input('q', $request->input('query')) ?? '');
+        $threads = $search->search($searchTerm)->appends($request->only('q', 'query'));
 
         return ThreadResource::collection($threads);
     }
@@ -57,7 +57,7 @@ class ThreadController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @return \App\Http\Resources\ThreadResource
+     * @return ThreadResource
      *
      * @throws \Illuminate\Auth\Access\AuthorizationException
      */
@@ -79,18 +79,18 @@ class ThreadController extends Controller
     }
 
     /**
-     * @return \App\Http\Resources\ThreadResource
+     * @return ThreadResource
      */
     public function show(Thread $thread)
     {
-        if (!$thread->shouldBeSearchable() && !optional(auth()->user())->is_admin
+        if (!$thread->isPublic() && !optional(auth()->user())->is_admin
             && !(optional(auth()->user())->is_valid && auth()->id() === $thread->user_id && !$thread->banned_at)) {
             abort(404);
         }
 
         $thread->loadMissing('content');
 
-        if ($thread->shouldBeSearchable()) {
+        if ($thread->isPublic()) {
             // Bypass model write hooks and leave publication/content/timestamps untouched.
             $thread->incrementViews();
             \dispatch(new ThreadAddPopular($thread));
@@ -102,7 +102,7 @@ class ThreadController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @return \App\Http\Resources\ThreadResource
+     * @return ThreadResource
      *
      * @throws \Illuminate\Auth\Access\AuthorizationException
      */

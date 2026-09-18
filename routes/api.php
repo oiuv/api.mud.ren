@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Overtrue\LaravelUploader\LaravelUploader;
 
-/**
+/*
  * IIS 服务器请在【HTTP响应标头】中设置以下值，并修改`config/cors.php`：
  *     'allowed_origins' => [],
  */
@@ -13,8 +13,7 @@ use Overtrue\LaravelUploader\LaravelUploader;
 
 // Auth
 Route::post('auth/register', 'AuthController@register');
-Route::get('oauth/redirect-url/{platform}', 'OAuthController@getRedirectUrl');
-Route::get('oauth/callback/{platform}', 'OAuthController@handleCallback');
+Route::match(['post', 'delete'], 'oauth/tokens/{token}', 'TokenController@destroy')->middleware('auth:api');
 Route::post('contents/preview', 'ContentController@preview');
 
 LaravelUploader::routes([

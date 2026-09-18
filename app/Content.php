@@ -20,7 +20,7 @@ use Mews\Purifier\Facades\Purifier;
  * @property string $body
  * @property string $markdown
  * @property string activity_log_content
- * @property \Illuminate\Database\Eloquent\Model                   $contentable
+ * @property Model                                                 $contentable
  * @property \Illuminate\Database\Eloquent\Relations\BelongsToMany $mentions
  */
 class Content extends Model
@@ -62,7 +62,7 @@ class Content extends Model
 
     public static function toHTML(string $markdown)
     {
-        return app(\ParsedownExtra::class)->text(\emoji($markdown));
+        return app(\ParsedownExtra::class)->text(app(\JoyPixels\Client::class)->shortnameToUnicode($markdown));
     }
 
     public function contentable()

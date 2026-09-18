@@ -33,7 +33,7 @@ class RelationController extends Controller
 
         $method = 'toggle'.\studly_case($relation);
 
-        \call_user_func_array([$request->user(), $method], $request->only(['followable_id', 'followable_type']));
+        $request->user()->{$method}($request->input('followable_id'), $request->input('followable_type'));
 
         return $this->withNoContent();
     }

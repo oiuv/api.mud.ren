@@ -34,22 +34,12 @@ return [
         'secret' => env('STRIPE_SECRET'),
     ],
 
-    'github' => [
-        'client_id' => env('GITHUB_CLIENT_ID'),
-        'client_secret' => env('GITHUB_CLIENT_SECRET'),
-        'redirect' => 'https://bbs.mud.ren/auth/oauth-callback/github',
-    ],
-
-    'google' => [
-        'client_id' => env('GOOGLE_CLIENT_ID'),
-        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-        'redirect' => 'https://bbs.mud.ren/auth/oauth-callback/google',
-    ],
-
-    'facebook' => [
-        'client_id' => env('FACEBOOK_CLIENT_ID'),
-        'client_secret' => env('FACEBOOK_CLIENT_SECRET'),
-        'redirect' => 'https://bbs.mud.ren/auth/oauth-callback/facebook',
+    'directmail' => [
+        'key' => env('ALIYUN_ACCESS_KEY_ID'),
+        'secret' => env('ALIYUN_ACCESS_KEY_SECRET'),
+        'region_id' => env('ALIYUN_REGION_ID', 'cn-hangzhou'),
+        'from_address' => env('ALIYUN_FROM_ADDRESS', env('MAIL_FROM_ADDRESS')),
+        'from_alias' => env('ALIYUN_FROM_ALIAS', env('MAIL_FROM_USER')),
     ],
 
     'captcha' => [

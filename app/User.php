@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
+use Laravel\Passport\Contracts\OAuthenticatable;
 use Laravel\Passport\HasApiTokens;
 use Overtrue\LaravelFollow\Traits\CanBeFollowed;
 use Overtrue\LaravelFollow\Traits\CanFavorite;
@@ -60,7 +61,7 @@ use Overtrue\LaravelFollow\Traits\CanVote;
  * @method static \App\User recent()
  * @method static \App\User admin()
  */
-class User extends Authenticatable
+class User extends Authenticatable implements OAuthenticatable
 {
     use HasApiTokens;
     use Notifiable;
@@ -84,7 +85,7 @@ class User extends Authenticatable
         'last_active_at', 'banned_at', 'activated_at',
     ];
 
-    const CACHE_FIELDS = [
+    public const CACHE_FIELDS = [
         'threads_count' => 0,
         'comments_count' => 0,
         'likes_count' => 0,
@@ -93,7 +94,7 @@ class User extends Authenticatable
         'subscriptions_count' => 0,
     ];
 
-    const EXTENDS_FIELDS = [
+    public const EXTENDS_FIELDS = [
         'company' => '',
         'location' => '',
         'home_url' => '',
@@ -107,11 +108,11 @@ class User extends Authenticatable
         'weibo' => '',
     ];
 
-    const SENSITIVE_FIELDS = [
+    public const SENSITIVE_FIELDS = [
         'last_active_at', 'banned_at', 'email', 'realname', 'phone', 'settings',
     ];
 
-    const UPDATE_SENSITIVE_FIELDS = [
+    public const UPDATE_SENSITIVE_FIELDS = [
         'last_active_at', 'banned_at',
     ];
 
@@ -124,11 +125,10 @@ class User extends Authenticatable
         'password', 'remember_token', 'phone',
     ];
 
-    protected $dates = [
-        'last_active_at', 'banned_at', 'activated_at',
-    ];
-
     protected $casts = [
+        'last_active_at' => 'datetime',
+        'banned_at' => 'datetime',
+        'activated_at' => 'datetime',
         'id' => 'int',
         'energy' => 'int',
         'is_admin' => 'bool',
@@ -141,17 +141,17 @@ class User extends Authenticatable
         'has_banned', 'has_activated', 'has_followed', 'created_at_timeago', 'updated_at_timeago',
     ];
 
-    const ENERGY_THREAD_CREATE = 10;
+    public const ENERGY_THREAD_CREATE = 10;
 
-    const ENERGY_COMMENT_CREATE = 5;
+    public const ENERGY_COMMENT_CREATE = 5;
 
-    const ENERGY_THREAD_LIKED = 3;
+    public const ENERGY_THREAD_LIKED = 3;
 
-    const ENERGY_COMMENT_UP_VOTE = 1;
+    public const ENERGY_COMMENT_UP_VOTE = 1;
 
-    const ENERGY_COMMENT_DOWN_VOTE = 1;
+    public const ENERGY_COMMENT_DOWN_VOTE = 1;
 
-    const ENERGY_COMMENT_DELETE = -10;
+    public const ENERGY_COMMENT_DELETE = -10;
 
     public static function boot()
     {
@@ -248,13 +248,9 @@ class User extends Authenticatable
     {
         if (empty($this->attributes['avatar'])) {
             $filename = \sprintf('avatars/%s.png', $this->id);
-            $filepath = \storage_path('app/public/'.$filename);
-
-            if (!\is_dir(\dirname($filepath))) {
-                \mkdir(\dirname($filepath), 0755, true);
-            }
-
-            \Avatar::create($this->username)->save(Storage::disk('public')->path($filename));
+            $disk = Storage::disk('public');
+            $disk->makeDirectory('avatars');
+            \Avatar::create($this->username)->save($disk->path($filename));
 
             $this->update(['avatar' => \asset(\sprintf('storage/%s', $filename))]);
         }
@@ -350,8 +346,6 @@ class User extends Authenticatable
      * Find the user identified by the given $identifier.
      *
      * @param $identifier email|phone
-     *
-     * @return mixed
      */
     public function findForPassport($identifier)
     {
@@ -373,32 +367,32 @@ class User extends Authenticatable
     {
         switch ($action) {
             case 'upvote':
-                //评论点赞
+                // 评论点赞
                 $this->increment('energy', self::ENERGY_COMMENT_UP_VOTE);
 
                 break;
             case 'upvote-cancel':
-                //评论点赞取消
+                // 评论点赞取消
                 $this->decrement('energy', self::ENERGY_COMMENT_UP_VOTE);
 
                 break;
             case 'downvote':
-                //踩评论
+                // 踩评论
                 $this->increment('energy', self::ENERGY_COMMENT_DOWN_VOTE);
 
                 break;
             case 'downvote-cancel':
-                //踩评论取消
+                // 踩评论取消
                 $this->decrement('energy', self::ENERGY_COMMENT_DOWN_VOTE);
 
                 break;
             case 'like':
-                //点赞帖子
+                // 点赞帖子
                 $this->increment('energy', self::ENERGY_THREAD_LIKED);
 
                 break;
             case 'like-cancel':
-                //取消点赞帖子
+                // 取消点赞帖子
                 $this->decrement('energy', self::ENERGY_THREAD_LIKED);
 
                 break;

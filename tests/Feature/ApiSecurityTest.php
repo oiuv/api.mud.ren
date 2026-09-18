@@ -4,18 +4,15 @@ namespace Tests\Feature;
 
 use App\Jobs\FetchContentMentions;
 use App\Jobs\ThreadAddPopular;
-use App\Services\EsEngine;
 use App\Thread;
 use App\User;
 use Carbon\Carbon;
-use Elasticsearch\Client;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Queue;
-use Laravel\Scout\EngineManager;
 use Mews\Purifier\Facades\Purifier;
 use Tests\TestCase;
 
@@ -23,7 +20,7 @@ class ApiSecurityTest extends TestCase
 {
     protected function createThread(array $attributes = [])
     {
-        $user = factory(User::class)->states('activated')->create();
+        $user = \Database\Factories\UserFactory::new()->activated()->create();
         $response = $this->actingAs($user, 'api')->postJson('/threads', $this->threadPayload($attributes));
         $response->assertStatus(201);
 
@@ -33,16 +30,14 @@ class ApiSecurityTest extends TestCase
     protected function asGuest()
     {
         $guard = $this->app['auth']->guard('api');
-        $user = new \ReflectionProperty($guard, 'user');
-        $user->setAccessible(true);
-        $user->setValue($guard, null);
+        $guard->forgetUser();
         $this->assertTrue($guard->guest());
     }
 
     public function testProfileUpdatesAuthorizeTheTargetUser()
     {
-        $owner = factory(User::class)->create();
-        $other = factory(User::class)->create();
+        $owner = \Database\Factories\UserFactory::new()->create();
+        $other = \Database\Factories\UserFactory::new()->create();
         $this->actingAs($owner, 'api')->patchJson('/users/'.$other->username, ['name' => 'Stolen profile'])
             ->assertStatus(403);
         $this->assertSame($other->name, $other->fresh()->name);
@@ -52,7 +47,7 @@ class ApiSecurityTest extends TestCase
 
     public function testUsersCannotChangeASingleSensitiveFieldOrUnbanThemselves()
     {
-        $user = factory(User::class)->create();
+        $user = \Database\Factories\UserFactory::new()->create();
         $this->actingAs($user, 'api')->patchJson('/users/'.$user->username, ['banned_at' => now()->toDateTimeString()])
             ->assertStatus(403);
         $this->assertNull($user->fresh()->banned_at);
@@ -64,7 +59,7 @@ class ApiSecurityTest extends TestCase
 
     public function testProfileInputCannotElevatePrivilegesOrOverwriteCounters()
     {
-        $user = factory(User::class)->create();
+        $user = \Database\Factories\UserFactory::new()->create();
         $this->actingAs($user, 'api')->patchJson('/users/'.$user->username, [
             'name' => 'Allowed name', 'is_admin' => true, 'energy' => 9999, 'cache' => ['threads_count' => 9999],
         ])->assertStatus(200);
@@ -76,8 +71,8 @@ class ApiSecurityTest extends TestCase
 
     public function testAdminCanStillBanAndUnbanAnotherUser()
     {
-        $admin = factory(User::class)->states('admin')->create();
-        $user = factory(User::class)->create();
+        $admin = \Database\Factories\UserFactory::new()->admin()->create();
+        $user = \Database\Factories\UserFactory::new()->create();
         $this->actingAs($admin, 'api')->patchJson('/users/'.$user->username, ['banned_at' => now()->toDateTimeString()])
             ->assertStatus(200);
         $this->assertNotNull($user->fresh()->banned_at);
@@ -87,7 +82,7 @@ class ApiSecurityTest extends TestCase
 
     public function testUsernameLookupTreatsSqlAsLiteralInput()
     {
-        factory(User::class)->create(['username' => 'KnownUser']);
+        \Database\Factories\UserFactory::new()->create(['username' => 'KnownUser']);
         $this->postJson('/user/exists', ['username' => 'knownuser'])->assertJson(['success' => false]);
         $this->postJson('/user/exists', ['username' => '" OR 1=1 -- '])->assertStatus(200)->assertJson(['success' => true]);
         $this->postJson('/user/exists', ['username' => ['invalid']])->assertStatus(422);
@@ -95,7 +90,7 @@ class ApiSecurityTest extends TestCase
 
     public function testExpiredPasswordResetTokenCannotChangePassword()
     {
-        $user = factory(User::class)->create();
+        $user = \Database\Factories\UserFactory::new()->create();
         $token = Password::broker()->createToken($user);
         DB::table('password_resets')->where('email', $user->email)->update([
             'created_at' => now()->subMinutes(config('auth.passwords.users.expire') + 1),
@@ -110,8 +105,8 @@ class ApiSecurityTest extends TestCase
     public function testResetTokenIsBoundToItsUserAndCanOnlyBeUsedOnce()
     {
         Event::fake([PasswordReset::class]);
-        $user = factory(User::class)->create();
-        $other = factory(User::class)->create();
+        $user = \Database\Factories\UserFactory::new()->create();
+        $other = \Database\Factories\UserFactory::new()->create();
         $token = Password::broker()->createToken($user);
         $payload = [
             'email' => $other->email, 'token' => $token,
@@ -132,7 +127,7 @@ class ApiSecurityTest extends TestCase
     {
         $payload = ['old_password' => 'old-password', 'password' => 'new-password', 'password_confirmation' => 'new-password'];
         $this->postJson('/user/reset-password', $payload)->assertStatus(401);
-        $user = factory(User::class)->create(['password' => Hash::make('old-password')]);
+        $user = \Database\Factories\UserFactory::new()->create(['password' => Hash::make('old-password')]);
         $this->actingAs($user, 'api')->postJson('/user/reset-password', array_merge($payload, ['old_password' => 'wrong']))
             ->assertStatus(422);
         $this->postJson('/user/reset-password', $payload)->assertStatus(200);
@@ -167,7 +162,7 @@ class ApiSecurityTest extends TestCase
         $owner = $thread->user;
         $this->asGuest();
         $this->getJson('/threads/'.$thread->id)->assertStatus(404);
-        $other = factory(User::class)->states('activated')->create();
+        $other = \Database\Factories\UserFactory::new()->activated()->create();
         $this->actingAs($other, 'api')->getJson('/threads/'.$thread->id)->assertStatus(404);
         $this->actingAs($owner, 'api')->getJson('/threads/'.$thread->id)->assertStatus(200);
         $thread->refresh()->refreshCache();
@@ -184,7 +179,7 @@ class ApiSecurityTest extends TestCase
     public function testEditingTheBodyWorksWithoutChangingTitleAndDoesNotTransferOwnership()
     {
         $thread = $this->createThread();
-        $other = factory(User::class)->create();
+        $other = \Database\Factories\UserFactory::new()->create();
         $this->patchJson('/threads/'.$thread->id, $this->threadPayload([
             'content' => ['markdown' => 'Only the body changed'],
             'user_id' => $other->id, 'cache' => ['views_count' => 9999],
@@ -210,7 +205,7 @@ class ApiSecurityTest extends TestCase
         $thread = $this->createThread(['type' => 'html', 'content' => ['body' => '<p>Hello HTML</p><script>alert(1)</script>']]);
         $this->assertSame('<p>Hello HTML</p>', $thread->content->body);
         $this->assertNull($thread->content->markdown);
-        $admin = factory(User::class)->states('activated', 'admin')->create();
+        $admin = \Database\Factories\UserFactory::new()->activated()->admin()->create();
         $payload = $thread->load('content')->toArray();
         $payload['pinned_at'] = now()->toDateTimeString();
         $this->actingAs($admin, 'api')->patchJson('/threads/'.$thread->id, $payload)->assertStatus(200);
@@ -230,7 +225,7 @@ class ApiSecurityTest extends TestCase
     public function testAdminModerationStillWorksWithTheFrontendPayload()
     {
         $thread = $this->createThread();
-        $admin = factory(User::class)->states('activated', 'admin')->create();
+        $admin = \Database\Factories\UserFactory::new()->activated()->admin()->create();
         $payload = $thread->load('content')->toArray();
         $payload['pinned_at'] = now()->toDateTimeString();
         $this->actingAs($admin, 'api')->patchJson('/threads/'.$thread->id, $payload)->assertStatus(200);
@@ -238,13 +233,13 @@ class ApiSecurityTest extends TestCase
         $this->assertSame('hello every one.', $thread->fresh()->content->markdown);
     }
 
-    public function testPublicListsAndSearchRejectStalePrivateSearchHits()
+    public function testPublicListsAndSearchExcludePrivateThreads()
     {
         $public = $this->createThread(['title' => 'Public matching post']);
         $draft = $this->createThread(['title' => 'Draft matching post', 'is_draft' => true]);
         $banned = $this->createThread(['title' => 'Banned matching post']);
         $future = $this->createThread(['title' => 'Future matching post']);
-        $invalidAuthor = $this->createThread(['title' => 'Invalid author post']);
+        $invalidAuthor = $this->createThread(['title' => 'Invalid author matching post']);
         $deleted = $this->createThread(['title' => 'Deleted matching post']);
         DB::table('threads')->where('id', $banned->id)->update(['banned_at' => now()]);
         DB::table('threads')->where('id', $future->id)->update(['published_at' => now()->addDay()]);
@@ -255,18 +250,9 @@ class ApiSecurityTest extends TestCase
             $this->getJson('/threads/'.$private->id)->assertStatus(404);
         }
         $this->getJson('/threads')->assertStatus(200)->assertJsonCount(1, 'data');
-        $elastic = \Mockery::mock(Client::class);
-        $elastic->shouldReceive('search')->once()->andReturn([
-            'hits' => ['total' => 6, 'hits' => array_map(function ($thread) {
-                return ['_id' => (string) $thread->id];
-            }, [$draft, $banned, $future, $invalidAuthor, $deleted, $public])],
-        ]);
-        $this->app->make(EngineManager::class)->extend('test-search', function () use ($elastic) {
-            return new EsEngine($elastic, 'testing');
-        });
-        config(['scout.driver' => 'test-search']);
         $response = $this->getJson('/threads/search?q=matching')->assertStatus(200)->assertJsonCount(1, 'data');
         $this->assertSame($public->id, $response->json('data.0.id'));
+        $this->assertSame(1, $response->json('meta.total'));
     }
 
     public function testRagCanReadMoreThanSixtyPostsPerMinute()
@@ -322,7 +308,7 @@ class ApiSecurityTest extends TestCase
             }
 
             return true;
-        })->twice();
+        })->once();
         $this->createThread();
     }
 

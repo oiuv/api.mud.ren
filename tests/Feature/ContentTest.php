@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Content;
 use App\Thread;
-use App\User;
 use Tests\TestCase;
 
 class ContentTest extends TestCase
@@ -13,7 +12,7 @@ class ContentTest extends TestCase
     {
         parent::setUp();
 
-        $user = \factory(User::class)->states('activated')->create();
+        $user = \Database\Factories\UserFactory::new()->activated()->create();
 
         $this->actingAs($user, 'api');
     }

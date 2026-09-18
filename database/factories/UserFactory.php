@@ -1,7 +1,10 @@
 <?php
 
+namespace Database\Factories;
+
 use App\User;
-use Faker\Generator as Faker;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,25 +17,31 @@ use Faker\Generator as Faker;
 |
 */
 
-$factory->define(User::class, function (Faker $faker) {
-    return [
-        'name' => $faker->name,
-        'username' => $faker->userName,
-        'email' => $faker->unique()->safeEmail,
-        'avatar' => 'https://example.test/avatar.png',
-        'password' => '$2y$10$TKh8H1.PfQx37YgCzwiKb.KjNyWgaHb9cbcoQgdIVFlYg7B77UdFm', // secret
-        'remember_token' => str_random(10),
-    ];
-});
+class UserFactory extends Factory
+{
+    protected $model = User::class;
 
-$factory->state(User::class, 'activated', function ($faker) {
-    return [
-        'activated_at' => now(),
-    ];
-});
+    public function definition(): array
+    {
+        $faker = $this->faker;
 
-$factory->state(User::class, 'admin', function ($faker) {
-    return [
-        'is_admin' => true,
-    ];
-});
+        return [
+            'name' => $faker->name,
+            'username' => $faker->userName,
+            'email' => $faker->unique()->safeEmail,
+            'avatar' => 'https://example.test/avatar.png',
+            'password' => '$2y$10$TKh8H1.PfQx37YgCzwiKb.KjNyWgaHb9cbcoQgdIVFlYg7B77UdFm', // secret
+            'remember_token' => Str::random(10),
+        ];
+    }
+
+    public function activated(): static
+    {
+        return $this->state(fn () => ['activated_at' => now()]);
+    }
+
+    public function admin(): static
+    {
+        return $this->state(fn () => ['is_admin' => true]);
+    }
+}

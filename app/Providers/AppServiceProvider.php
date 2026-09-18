@@ -3,9 +3,9 @@
 namespace App\Providers;
 
 use App\Comment;
+use App\Mail\Transport\AliyunTransport;
 use App\Observers\CommentObserver;
 use App\Observers\UserObserver;
-use App\Services\EsEngine;
 use App\User;
 use App\Validators\HashValidator;
 use App\Validators\IdNumberValidator;
@@ -17,11 +17,11 @@ use App\Validators\TicketValidator;
 use App\Validators\UsernameValidator;
 use App\Validators\UserUniqueContentValidator;
 use Carbon\Carbon;
-use Elasticsearch\ClientBuilder;
-use Illuminate\Http\Resources\Json\Resource;
+use GuzzleHttp\Client;
+use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\ServiceProvider;
-use Laravel\Scout\EngineManager;
 use Overtrue\EasySms\EasySms;
 
 class AppServiceProvider extends ServiceProvider
@@ -43,7 +43,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        Resource::withoutWrapping();
+        JsonResource::withoutWrapping();
 
         Carbon::setLocale('zh');
 
@@ -51,8 +51,7 @@ class AppServiceProvider extends ServiceProvider
         Comment::observe(CommentObserver::class);
 
         $this->registerValidators();
-
-        $this->registerEsEngine();
+        Mail::extend('directmail', fn () => new AliyunTransport(new Client(), config('services.directmail', [])));
     }
 
     /**
@@ -72,16 +71,5 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->app->alias(EasySms::class, 'sms');
-    }
-
-    protected function registerEsEngine(): void
-    {
-        resolve(EngineManager::class)->extend('es', function ($app) {
-            return new EsEngine(ClientBuilder::create()
-                ->setHosts(config('scout.elasticsearch.hosts'))
-                ->build(),
-                config('scout.elasticsearch.index')
-            );
-        });
     }
 }

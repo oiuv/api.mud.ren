@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Notifications\Welcome;
-use App\User;
 use Tests\TestCase;
 
 class NotificationTest extends TestCase
@@ -13,7 +12,7 @@ class NotificationTest extends TestCase
      */
     public function testUserCanGetNotifications()
     {
-        $user = \factory(User::class)->create();
+        $user = \Database\Factories\UserFactory::new()->create();
 
         $user->notifyNow(new Welcome());
 
@@ -31,7 +30,7 @@ class NotificationTest extends TestCase
 
     public function testUserCanMarkNotificationAsRead()
     {
-        $user = \factory(User::class)->create();
+        $user = \Database\Factories\UserFactory::new()->create();
 
         $user->notifyNow(new Welcome());
 
@@ -51,7 +50,7 @@ class NotificationTest extends TestCase
 
     public function testUserCanMarkAllNotificationAsRead()
     {
-        $user = \factory(User::class)->create();
+        $user = \Database\Factories\UserFactory::new()->create();
 
         $user->notifyNow(new Welcome());
         $user->notifyNow(new Welcome());

@@ -12,6 +12,7 @@ npm-debug.log
 yarn-error.log
 .env
 .php_cs.cache
+.php-cs-fixer.cache
 deploy.php
 web.config
 /.codegraph/

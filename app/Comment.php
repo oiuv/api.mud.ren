@@ -15,19 +15,23 @@ use Overtrue\LaravelFollow\Traits\CanBeVoted;
  *
  * @author overtrue <i@overtrue.me>
  *
- * @property int       $commentable_id
- * @property string    $commentable_type
- * @property int       $user_id
- * @property bool      $banned_at
- * @property object    $cache
- * @property \App\User $user
+ * @property int    $commentable_id
+ * @property string $commentable_type
+ * @property int    $user_id
+ * @property bool   $banned_at
+ * @property object $cache
+ * @property User   $user
  * @property Model     commentable
  */
 class Comment extends Model
 {
-    use SoftDeletes, Filterable, CanBeVoted, OnlyActivatedUserCanCreate, WithDiffForHumanTimes;
+    use SoftDeletes;
+    use Filterable;
+    use CanBeVoted;
+    use OnlyActivatedUserCanCreate;
+    use WithDiffForHumanTimes;
 
-    const COMMENTABLES = [
+    public const COMMENTABLES = [
         Thread::class,
     ];
 
@@ -35,15 +39,12 @@ class Comment extends Model
         'commentable_id', 'commentable_type', 'user_id', 'banned_at', 'cache',
     ];
 
-    protected $dates = [
-        'banned_at',
-    ];
-
     protected $with = [
         'user', 'content',
     ];
 
     protected $casts = [
+        'banned_at' => 'datetime',
         'id' => 'int',
         'user_id' => 'int',
         'cache' => 'object',

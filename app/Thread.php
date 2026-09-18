@@ -5,14 +5,12 @@ namespace App;
 use App\Contracts\Commentable;
 use App\Jobs\FetchContentMentions;
 use App\Jobs\FilterThreadSensitiveWords;
-use App\Traits\EsHighlightAttributes;
 use App\Traits\OnlyActivatedUserCanCreate;
 use App\Traits\WithDiffForHumanTimes;
 use EloquentFilter\Filterable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
-use Laravel\Scout\Searchable;
 use Overtrue\LaravelFollow\Traits\CanBeFavorited;
 use Overtrue\LaravelFollow\Traits\CanBeLiked;
 use Overtrue\LaravelFollow\Traits\CanBeSubscribed;
@@ -45,8 +43,6 @@ class Thread extends Model implements Commentable
     use CanBeSubscribed;
     use CanBeFavorited;
     use CanBeLiked;
-    use Searchable;
-    use EsHighlightAttributes;
 
     protected $fillable = [
         'user_id', 'title', 'excellent_at', 'node_id',
@@ -56,13 +52,18 @@ class Thread extends Model implements Commentable
     ];
 
     protected $casts = [
+        'excellent_at' => 'datetime',
+        'pinned_at' => 'datetime',
+        'frozen_at' => 'datetime',
+        'banned_at' => 'datetime',
+        'published_at' => 'datetime',
         'id' => 'int',
         'user_id' => 'int',
         'is_excellent' => 'bool',
         'cache' => 'array',
     ];
 
-    const CACHE_FIELDS = [
+    public const CACHE_FIELDS = [
         'views_count' => 0,
         'comments_count' => 0,
         'likes_count' => 0,
@@ -71,12 +72,8 @@ class Thread extends Model implements Commentable
         'last_reply_user_name' => null,
     ];
 
-    const SENSITIVE_FIELDS = [
+    public const SENSITIVE_FIELDS = [
         'excellent_at', 'pinned_at', 'frozen_at', 'banned_at',
-    ];
-
-    protected $dates = [
-        'excellent_at', 'pinned_at', 'frozen_at', 'banned_at', 'published_at',
     ];
 
     protected $with = ['user'];
@@ -87,13 +84,13 @@ class Thread extends Model implements Commentable
         'has_subscribed',
     ];
 
-    const POPULAR_CONDITION_LIKES_COUNT = 15;
+    public const POPULAR_CONDITION_LIKES_COUNT = 15;
 
-    const POPULAR_CONDITION_VIEWS_COUNT = 200;
+    public const POPULAR_CONDITION_VIEWS_COUNT = 200;
 
-    const POPULAR_CONDITION_COMMENTS_COUNT = 10;
+    public const POPULAR_CONDITION_COMMENTS_COUNT = 10;
 
-    const THREAD_SENSITIVE_TRIGGER_LIMIT = 5;
+    public const THREAD_SENSITIVE_TRIGGER_LIMIT = 5;
 
     protected static function boot()
     {
@@ -112,7 +109,7 @@ class Thread extends Model implements Commentable
             }
 
             if ($thread->isDirty('title')) {
-                $thread->title = \dispatch_now(new FilterThreadSensitiveWords($thread->title));
+                $thread->title = \dispatch_sync(new FilterThreadSensitiveWords($thread->title));
             }
         });
 
@@ -123,49 +120,44 @@ class Thread extends Model implements Commentable
 
     public function saveWithContent(array $attributes, ?array $content = null)
     {
-        static::withoutSyncingToSearch(function () use ($attributes, $content) {
-            DB::transaction(function () use ($attributes, $content) {
-                $creating = !$this->exists;
-                $publishing = !$this->published_at && !empty($attributes['published_at']);
-                $this->fill($attributes)->save();
+        DB::transaction(function () use ($attributes, $content) {
+            $creating = !$this->exists;
+            $publishing = !$this->published_at && !empty($attributes['published_at']);
+            $this->fill($attributes)->save();
 
-                if ($content !== null) {
-                    foreach ($content as $field => $value) {
-                        if ($value !== null) {
-                            $content[$field] = \dispatch_now(new FilterThreadSensitiveWords($value));
-                        }
+            if ($content !== null) {
+                foreach ($content as $field => $value) {
+                    if ($value !== null) {
+                        $content[$field] = \dispatch_sync(new FilterThreadSensitiveWords($value));
                     }
-                    $savedContent = $this->content()->firstOrNew([]);
-                    $savedContent->deferMentions = true;
-                    $savedContent->fill($content)->save();
-                    $savedContent->deferMentions = false;
-                    $this->setRelation('content', $savedContent);
                 }
+                $savedContent = $this->content()->firstOrNew([]);
+                $savedContent->deferMentions = true;
+                $savedContent->fill($content)->save();
+                $savedContent->deferMentions = false;
+                $this->setRelation('content', $savedContent);
+            }
 
-                if ($creating) {
-                    $this->user->increment('energy', User::ENERGY_THREAD_CREATE);
-                }
-                if ($publishing && !Activity::where('log_name', 'published.thread')
-                    ->where('subject_type', self::class)->where('subject_id', $this->id)->exists()) {
-                    \activity('published.thread')
-                        ->performedOn($this)
-                        ->withProperty('content', \str_limit(\strip_tags(optional($this->content)->body), 200))
-                        ->log('发布帖子');
-                }
-            });
+            if ($creating) {
+                $this->user->increment('energy', User::ENERGY_THREAD_CREATE);
+            }
+            if ($publishing && !Activity::where('log_name', 'published.thread')
+                ->where('subject_type', self::class)->where('subject_id', $this->id)->exists()) {
+                \activity('published.thread')
+                    ->performedOn($this)
+                    ->withProperty('content', \str_limit(\strip_tags(optional($this->content)->body), 200))
+                    ->log('发布帖子');
+            }
         });
 
         if ($content !== null) {
             \dispatch(new FetchContentMentions($this->content));
         }
 
-        // Index only after the body and the transaction have been saved.
-        $this->shouldBeSearchable() ? $this->searchable() : $this->unsearchable();
-
         return $this;
     }
 
-    public function shouldBeSearchable()
+    public function isPublic()
     {
         return $this->published_at && $this->published_at->lte(now())
             && !$this->banned_at && !$this->trashed() && optional($this->user)->is_valid;
@@ -178,18 +170,6 @@ class Thread extends Model implements Commentable
             'cache' => DB::raw("JSON_SET(COALESCE(cache, '{}'), '$.views_count', COALESCE(JSON_EXTRACT(cache, '$.views_count'), 0) + 1)"),
         ]);
         $this->cache = array_merge($this->cache, ['views_count' => $this->cache['views_count'] + 1]);
-    }
-
-    public function toSearchableArray()
-    {
-        $content = $this->content ? $this->content->markdown : '';
-
-        return array_merge(\array_except($this->toArray(), 'user'), \compact('content'));
-    }
-
-    public function searchableType()
-    {
-        return 'App\Thread';
     }
 
     public function comments()
@@ -280,11 +260,7 @@ class Thread extends Model implements Commentable
     }
 
     /**
-     * @param \App\Comment $lastComment
-     *
      * @throws \Exception
-     *
-     * @return mixed
      */
     public function afterCommentCreated(Comment $lastComment)
     {

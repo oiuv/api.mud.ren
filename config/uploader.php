@@ -13,7 +13,7 @@ return [
     /*
      * Base uri for $response->url
      */
-    'base_uri' => null,
+    'base_uri' => '',
 
     /*
      * Strategies
@@ -73,6 +73,6 @@ return [
             'directory' => 'avatars/{Y}/{m}/{d}',
         ],
 
-        //...
+        // ...
     ],
 ];

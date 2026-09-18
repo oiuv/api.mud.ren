@@ -15,6 +15,11 @@ $app = new Illuminate\Foundation\Application(
     realpath(__DIR__.'/../')
 );
 
+// Artisan cache commands bootstrap another application; keep that instance isolated too.
+if (getenv('APP_ENV') === 'testing') {
+    $app->loadEnvironmentFrom('tests/.env.unused');
+}
+
 /*
 |--------------------------------------------------------------------------
 | Bind Important Interfaces

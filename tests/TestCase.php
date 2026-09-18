@@ -16,12 +16,14 @@ abstract class TestCase extends BaseTestCase
     use RefreshDatabase;
 
     protected $faker;
+    protected $mailManager;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->faker = Faker::create();
         Queue::fake();
+        $this->mailManager = app('mail.manager');
         Mail::fake();
         $this->instance(TicketValidator::class, \Mockery::mock(TicketValidator::class)
             ->shouldReceive('validate')->andReturn(true)->getMock());

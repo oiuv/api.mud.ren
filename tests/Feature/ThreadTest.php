@@ -15,12 +15,12 @@ class ThreadTest extends TestCase
 
     public function testOnlyUserActivatedCanCreateThread()
     {
-        $user = \factory(User::class)->create();
+        $user = \Database\Factories\UserFactory::new()->create();
         $this->actingAs($user, 'api')->postJson('/threads', $this->threadPayload())
             ->assertStatus(403);
 
         // activated
-        $userActivated = \factory(User::class)->states('activated')->create();
+        $userActivated = \Database\Factories\UserFactory::new()->activated()->create();
         $this->actingAs($userActivated, 'api')->postJson('/threads', $this->threadPayload())
             ->assertStatus(201);
     }
@@ -30,7 +30,7 @@ class ThreadTest extends TestCase
      */
     public function testLoggedUserCanCreateThread()
     {
-        $user = \factory(User::class)->states('activated')->create();
+        $user = \Database\Factories\UserFactory::new()->activated()->create();
 
         $this->actingAs($user, 'api')->postJson('/threads', $this->threadPayload())
             ->assertStatus(201)
@@ -50,8 +50,8 @@ class ThreadTest extends TestCase
 
     public function testUserCannotUpdateOtherUsersThread()
     {
-        $user1 = \factory(User::class)->states('activated')->create();
-        $user2 = \factory(User::class)->states('activated')->create();
+        $user1 = \Database\Factories\UserFactory::new()->activated()->create();
+        $user2 = \Database\Factories\UserFactory::new()->activated()->create();
 
         $this->actingAs($user1, 'api')->postJson('/threads', $this->threadPayload())
             ->assertStatus(201);
@@ -62,7 +62,7 @@ class ThreadTest extends TestCase
 
     public function testViewThread()
     {
-        $user = \factory(User::class)->states('activated')->create();
+        $user = \Database\Factories\UserFactory::new()->activated()->create();
 
         $this->actingAs($user, 'api')->postJson('/threads', $this->threadPayload())
             ->assertStatus(201)
@@ -78,8 +78,8 @@ class ThreadTest extends TestCase
 
     public function testUserCanOnlyDeleteHisThread()
     {
-        $user1 = \factory(User::class)->states('activated')->create();
-        $user2 = \factory(User::class)->states('activated')->create();
+        $user1 = \Database\Factories\UserFactory::new()->activated()->create();
+        $user2 = \Database\Factories\UserFactory::new()->activated()->create();
 
         $this->actingAs($user1, 'api')->postJson('/threads', $this->threadPayload())
             ->assertStatus(201);

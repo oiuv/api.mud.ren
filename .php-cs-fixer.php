@@ -9,19 +9,19 @@ This source file is subject to the MIT license that is bundled
 with this source code in the file LICENSE.
 EOF;
 
-return PhpCsFixer\Config::create()
+return (new PhpCsFixer\Config())
     ->setRiskyAllowed(true)
-    ->setRules(array(
+    ->setRules([
         '@Symfony' => true,
-        //'header_comment' => array('header' => $header),
-        'array_syntax' => array('syntax' => 'short'),
+        // 'header_comment' => array('header' => $header),
+        'array_syntax' => ['syntax' => 'short'],
         'ordered_imports' => true,
         'no_useless_else' => true,
         'no_useless_return' => true,
         'php_unit_construct' => true,
         'php_unit_strict' => true,
         'yoda_style' => false,
-    ))
+    ])
     ->setFinder(
         PhpCsFixer\Finder::create()
             ->notPath('app/Console/Kernel.php')
