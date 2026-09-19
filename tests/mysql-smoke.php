@@ -95,6 +95,23 @@ foreach (['武侠', '%', '_', '!', '\\'] as $term) {
     $result = $request('GET', '/threads/search', ['q' => $term]);
     $check($result['meta']['total'] === 1 && $result['data'][0]['id'] === 73, 'Literal MySQL search failed for '.$term.': '.json_encode($result, JSON_UNESCAPED_UNICODE));
 }
+DB::table('contents')->where('contentable_type', Thread::class)->where('contentable_id', 73)->update([
+    'body' => '<p>历史正文</p><a href="https://example.test">文档</a>',
+]);
+$check($request('GET', '/threads/search', ['q' => 'href'])['meta']['total'] === 0, 'Rendered Markdown attributes were searchable.');
+DB::table('contents')->where('contentable_type', Thread::class)->where('contentable_id', 73)->update([
+    'markdown' => null,
+    'body' => '<p>C++ &amp; LPC；Soc<strong>ket</strong>；&lt;script&gt;</p><a href="https://example.test">文档</a>',
+]);
+foreach (['C++ & LPC', 'socket', '<script>'] as $term) {
+    $result = $request('GET', '/threads/search', ['q' => $term]);
+    $check($result['meta']['total'] === 1 && $result['data'][0]['id'] === 73, 'Visible HTML body was not searchable for '.$term);
+    $highlight = $result['data'][0]['highlights']['content'][0];
+    $check(str_contains($highlight, '<em>') && !str_contains($highlight, '<script>'), 'HTML body highlight was missing or unsafe.');
+}
+foreach (['href', 'amp'] as $term) {
+    $check($request('GET', '/threads/search', ['q' => $term])['meta']['total'] === 0, 'HTML markup was searchable for '.$term);
+}
 $created = $request('POST', '/threads', [
     'title' => '升级后的新主题标题', 'node_id' => 1, 'type' => 'markdown',
     'content' => ['markdown' => '保存后的新关键词'], 'ticket' => 'test-ticket',

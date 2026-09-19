@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Content;
 use App\Thread;
 
 class ThreadSearch
@@ -13,22 +14,20 @@ class ThreadSearch
         if ($term === '') {
             $query->whereRaw('1 = 0');
         } else {
+            $htmlThreadIds = $this->matchingHtmlThreads($term);
             // INSTR treats every character literally, including LIKE's wildcard/escape characters.
-            $query->where(function ($query) use ($term) {
+            $query->where(function ($query) use ($term, $htmlThreadIds) {
                 $query->whereRaw('INSTR(LOWER(title), LOWER(?)) > 0', [$term])
                     ->orWhereHas('content', function ($query) use ($term) {
-                        $query->where(function ($query) use ($term) {
-                            $query->whereRaw('INSTR(LOWER(markdown), LOWER(?)) > 0', [$term])
-                                ->orWhereRaw('INSTR(LOWER(body), LOWER(?)) > 0', [$term]);
-                        });
-                    });
+                        $query->whereRaw('INSTR(LOWER(markdown), LOWER(?)) > 0', [$term]);
+                    })
+                    ->orWhereIn('id', $htmlThreadIds);
             })->orderByRaw('CASE WHEN INSTR(LOWER(title), LOWER(?)) > 0 THEN 0 ELSE 1 END', [$term]);
         }
 
         $threads = $query->orderByDesc('published_at')->orderByDesc('id')->paginate(10);
         foreach ($threads as $thread) {
-            $content = $thread->content;
-            $body = $content ? ($content->markdown ?: html_entity_decode(strip_tags($content->body), ENT_QUOTES | ENT_HTML5, 'UTF-8')) : '';
+            $body = $this->searchableBody($thread->content);
             $thread->setAttribute('highlights', [
                 // Always provide an escaped title: consumers render this field as HTML.
                 'title' => [$this->highlight($thread->title, $term)],
@@ -37,6 +36,41 @@ class ThreadSearch
         }
 
         return $threads;
+    }
+
+    private function matchingHtmlThreads(string $term): array
+    {
+        $ids = [];
+        // MySQL 5.7 cannot strip HTML and decode arbitrary entities. Normalize only
+        // public HTML-only bodies, then let SQL count and paginate all matching IDs.
+        Content::query()->select(['id', 'contentable_id', 'markdown', 'body'])
+            ->where(function ($query) {
+                $query->whereNull('markdown')->orWhereRaw('LENGTH(markdown) = 0');
+            })
+            ->whereHasMorph('contentable', [Thread::class], function ($query) {
+                $query->published();
+            })
+            ->chunkById(100, function ($contents) use ($term, &$ids) {
+                foreach ($contents as $content) {
+                    if (mb_stripos($this->searchableBody($content), $term, 0, 'UTF-8') !== false) {
+                        $ids[] = $content->contentable_id;
+                    }
+                }
+            });
+
+        return $ids;
+    }
+
+    private function searchableBody(?Content $content): string
+    {
+        if ($content === null) {
+            return '';
+        }
+        if ($content->markdown !== null && $content->markdown !== '') {
+            return $content->markdown;
+        }
+
+        return html_entity_decode(strip_tags((string) $content->body), ENT_QUOTES | ENT_HTML5, 'UTF-8');
     }
 
     private function snippet(string $text, string $term): string

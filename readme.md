@@ -67,6 +67,8 @@ ALIYUN_FROM_ALIAS=mudren
 
 路由没有 `/api` 前缀。搜索为 `GET /threads/search?q=关键词&page=1`，保留 `data/links/meta` 和 `highlights.title/content`，每页 10 条、标题命中优先。空查询返回空分页，最长 100 字符，特殊字符按字面匹配。只查询公开主题，不检索评论。
 
+正文优先匹配 Markdown；没有 Markdown 时，匹配去除 HTML 标签并解码实体后的富文本，匹配和高亮使用相同文本。富文本按批读取并在应用端匹配，命中 ID 再参与数据库排序、分页和总数统计，适用于当前小规模论坛；无需额外索引或数据库迁移。
+
 RAG 的 `/threads/{id}` 和 `content.markdown`、原主题 ID、`App\Thread` 多态类型保持不变。没有共享的每分钟 60 次 API 配额；验证码、登录权限和发帖频率限制仍然生效。
 
 CORS 默认由 IIS/反向代理提供，`config/cors.php` 中 `paths` 保持为空。若改用 Laravel 处理跨域，将其设为 `['*']` 并移除服务器重复的 CORS 响应头。
