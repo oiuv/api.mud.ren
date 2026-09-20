@@ -28,7 +28,13 @@ class UserFilter extends ModelFilter
     {
         switch ($type) {
             case 'ranking':
-                $this->orderByDesc("energy");
+                $this->orderByDesc('energy');
+
+                break;
+
+            case 'recentActive':
+                $this->whereNull('deleted_at')->whereNotNull('last_active_at')->whereNotNull('activated_at')
+                    ->reorder('last_active_at', 'desc')->orderByDesc('id');
 
                 break;
 

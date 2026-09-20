@@ -42,6 +42,7 @@ class Kernel extends HttpKernel
         'api' => [
             // RAG retrieves multiple posts per query; do not impose a shared API quota.
             'bindings',
+            Middleware\RecordUserActivity::class,
         ],
     ];
 

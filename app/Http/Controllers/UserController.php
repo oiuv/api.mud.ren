@@ -23,7 +23,12 @@ class UserController extends Controller
     {
         $users = User::withoutBanned()->filter($request->all())->paginate($request->get('per_page', $request->get('limit', 20)));
 
-        return UserResource::collection($users);
+        $resource = UserResource::collection($users);
+        if ($request->get('order') === 'recentActive') {
+            $resource->additional(['meta' => ['order' => 'recentActive']]);
+        }
+
+        return $resource;
     }
 
     public function exists(Request $request)
@@ -135,7 +140,7 @@ class UserController extends Controller
     /**
      * Display the specified resource.
      *
-     * @return \App\Http\Resources\UserResource
+     * @return UserResource
      */
     public function show(User $user)
     {
@@ -145,7 +150,7 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @return \App\Http\Resources\UserResource
+     * @return UserResource
      *
      * @throws \Illuminate\Auth\Access\AuthorizationException
      */
